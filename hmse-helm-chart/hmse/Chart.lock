@@ -1,0 +1,9 @@
+dependencies:
+- name: airflow
+  repository: https://airflow-helm.github.io/charts
+  version: 8.7.0
+- name: hmse-webserver
+  repository: file://charts/hmse-webserver
+  version: 0.1.0
+digest: sha256:8f53284b9b94ea7a5c798cb96c3135db622d55cfee28f537493211ec64b52bf2
+generated: "2023-05-21T15:57:17.218307099+02:00"

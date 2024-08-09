@@ -1,0 +1,7 @@
+flopy==3.7.0
+numpy
+phydrus==0.3.0
+scipy
+StrEnum==0.4.8
+Werkzeug==2.2.0
+zipp==3.8.1

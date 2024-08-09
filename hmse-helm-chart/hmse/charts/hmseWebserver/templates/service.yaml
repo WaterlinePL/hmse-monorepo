@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hmse-k8s-webserver-service
+spec:
+  selector:
+    app: hmse-k8s-webserver
+  ports:
+  - name: hmse-k8s-webserver
+    protocol: TCP
+    port: {{ .Values.httpPort }}
+    targetPort: 8080

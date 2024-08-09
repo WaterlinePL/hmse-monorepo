@@ -1,0 +1,5 @@
+persistence:
+  accessMode: ReadWriteMany
+  size: 10Gi    # suggested not going below 2Gi
+storageClass:
+  defaultClass: true

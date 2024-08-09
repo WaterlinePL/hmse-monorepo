@@ -1,0 +1,35 @@
+image: watermodelling/hmse-k8s:latest
+httpPort: 8080
+
+
+## Simulation PVC config
+simulationPvc:
+  name: simulation-pvc
+  size: 2Gi
+
+## S3 config
+##  required fields in the secret:
+##   - access_key (S3 access key)
+##   - secret_key (S3 secret key)
+##   - endpoint (S3 compatible endpoint, e.g. MinIO url)
+s3:
+  secret:
+    name: s3-secret
+    accessKey: ""   # FILL IN (required)
+    secretKey: ""   # FILL IN (required)
+    # FILL IN if using other service than AWS S3; endpoint must use https (https:// prefix should be omitted in this value)
+    # e.g. for https://example.com the value for endpoint should be "example.com"
+    endpoint: ""
+  region: us-east-1
+  bucket: ""  # FILL IN
+  interface: "MINIO"  # CHANGE IF NECESSARY (MINIO/S3), dependent on S3 interface type
+
+ingress:
+  # Add if using ingress with prefix for exposing the webserver
+  prefix: ""
+
+## Airflow secret which allows to authenticate to the Airflow API calls
+##  required fields in the secret:
+##   - airflow_user (airflow login username to account with API calls privilages)
+##   - airflow_password (airflow login password for that account)
+airflowSecretName: airflow-secret

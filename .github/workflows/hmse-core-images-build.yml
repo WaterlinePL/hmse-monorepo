@@ -1,0 +1,54 @@
+name: Build latest HMSE application artifacts for docker and k8s deployments
+on:
+  push:
+    branches: [master]
+    paths:
+      - hmse-core/**
+      - hmse-utils/**
+      - phydrus/**
+
+env:
+  IMAGE_NAME_DOCKER: hmse-docker
+  IMAGE_NAME_K8S: hmse-k8s
+
+jobs:
+
+  build_docker_image_docker:
+
+    name: Build Docker image for Docker deployment of HMSE
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+          
+      - name: Build Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile-docker
+          tags: watermodelling/${{env.IMAGE_NAME_DOCKER}}:latest-pre
+
+  build_docker_image_k8s:
+
+    name: Build Docker image for K8S deployment of HMSE
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile-k8s
+          tags: watermodelling/${{env.IMAGE_NAME_K8S}}:latest-pre

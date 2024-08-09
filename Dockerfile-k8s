@@ -1,0 +1,14 @@
+FROM python:3.11-slim-buster
+RUN apt-get update
+RUN apt-get install ffmpeg libsm6 libxext6  -y
+COPY phydrus /phydrus
+RUN pip install -e /phydrus
+COPY hmse-utils /hmse-utils
+RUN pip install -e /hmse-utils
+COPY requirements.txt requirements.txt
+RUN python3 -m pip install -r requirements.txt
+COPY hmse-core /hmse-core
+EXPOSE 8080
+ENV PYTHONPATH /hmse-core
+WORKDIR /hmse-core
+CMD ["python3", "main.py", "--deployment", "k8s"]

@@ -1,0 +1,31 @@
+name: Build latest MinIO (S3) manipulation job for HMSE k8s deployment
+on:
+  push:
+    branches: [master]
+    paths:
+      - k8s-jobs/minio-manipulation-job/**
+
+env:
+  IMAGE_NAME: minio-manipulation-job
+
+jobs:
+
+  build_docker_image:
+
+    name: Build Docker image for MinIO (S3) manipulation job
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+          
+      - name: Build Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./k8s-jobs/minio-manipulation-job/Dockerfile
+          tags: watermodelling/${{env.IMAGE_NAME}}:latest-pre

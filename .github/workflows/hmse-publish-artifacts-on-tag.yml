@@ -1,0 +1,153 @@
+name: Publish HMSE artifacts based on created tag
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+env:
+  AIRFLOW_TEMPLATE_REPO: https://airflow-helm.github.io/charts
+  AIRFLOW_TEMPLATE_VERSION: 8.7.0
+
+jobs:
+  build_and_publish_docker_images:
+    strategy:
+      matrix:
+        include:
+          - docker-image-name: hmse-docker
+            docker-file: ./Dockerfile-docker
+          - docker-image-name: hmse-k8s
+            docker-file: ./Dockerfile-k8s
+          - docker-image-name: airflow
+            docker-file: ./hmse-dags/Dockerfile
+            docker-tag-prefix: 2.5.0-p3.7-
+          - docker-image-name: hydrus-1d-linux
+            docker-file: ./k8s-jobs/hydrus-1d-linux/Dockerfile
+          - docker-image-name: minio-manipulation-job
+            docker-file: ./k8s-jobs/minio-manipulation-job/Dockerfile
+          - docker-image-name: simulation-files-manipulation-job
+            docker-file: ./k8s-jobs/simulation-files-manipulation-job/Dockerfile
+
+    name: Build and publish HMSE Docker image ${{ matrix.docker-image-name }}
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push latest Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ${{ matrix.docker-file }}
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.docker-image-name }}:${{ matrix.docker-tag-prefix }}latest
+
+      - name: Build and push ${{ github.ref_name }} Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ${{ matrix.docker-file }}
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.docker-image-name }}:${{ matrix.docker-tag-prefix }}${{ github.ref_name }}
+
+  deploy_helm_chart:
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Build new Helm chart from master
+        run: |
+          git fetch origin master
+          git checkout master
+          helm repo add airflow-stable ${{ env.AIRFLOW_TEMPLATE_REPO }}
+          helm pull airflow-stable/airflow --version ${{ env.AIRFLOW_TEMPLATE_VERSION }} -d hmse-helm-chart/hmse/charts
+          helm package hmse-helm-chart/hmse -d hmse-helm-chart/charts
+          helm repo index hmse-helm-chart/charts
+
+      - name: Temporarily commit chart on master branch, checkout to helm-repo branch and commit it there
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git add hmse-helm-chart/charts
+          git commit -m "tmp Helm chart commit: this should not be on master branch"
+          git fetch origin helm-repo
+          git checkout helm-repo
+          git checkout master -- hmse-helm-chart/charts/
+          git commit -m "Helm Chart for k8s ${{ github.ref_name }}"
+
+      - name: Push changes to helm-repo branch
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: helm-repo
+          force: true
+
+  build_and_publish_desktop_version_pyinstaller:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    name: Build and publish executable of HMSE core web application for Desktop deployment using Pyinstaller
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install packages from repo
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller==6.9.0
+          pip install -e .\phydrus
+          pip install -e .\hmse-utils
+          pip install -r requirements.txt
+          pip list
+
+      - name: Build HMSE desktop executable package
+        run: |
+          pyinstaller --onedir --name "hmse" --hidden-import "scipy.signal" --paths "phydrus" --add-data ".\hmse-core\server\templates;server\templates" --add-data ".\hmse-core\server\static;server\static" hmse-core\main.py
+          Compress-Archive -Path dist/* -Destination hmse_desktop_${{ github.ref_name }}.zip
+
+      - name: Create release for HMSE with desktop version executable
+        uses: softprops/action-gh-release@v2
+        with:
+          name: HMSE ${{ github.ref_name }}
+          files: hmse_desktop_${{ github.ref_name }}.zip
+          make_latest: true
+          body: |
+            # Desktop version
+            1. Download hmse_desktop_${{ github.ref_name }}.zip
+            2. Unpack the archive
+            3. Launch `hmse.exe`
+
+            # Docker version
+            1. Pull newest image: `docker pull ${{ secrets.DOCKERHUB_USERNAME }}/hmse-docker:latest` or `docker pull ${{ secrets.DOCKERHUB_USERNAME }}/hmse-docker:${{ github.ref_name }}`
+            2. Download `docker-compose.yml` file from the main repo
+            3. Launch application using `docker compose up` in the same directory as `docker-compose.yml`
+
+            # K8S version
+            Please refer to main manual in the repo for installation of that deployment.

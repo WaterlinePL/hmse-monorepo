@@ -1,0 +1,41 @@
+name: Run tests for HMSE utils module
+on:
+  push:
+    branches: [master]
+    paths:
+      - hmse-utils/**
+      - phydrus/**
+
+jobs:
+
+  hmse_utils_tests:
+
+    name: Run HMSE utils tests
+    timeout-minutes: 10
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version: [ "3.8", "3.9", "3.10", "3.11" ]
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+        
+      - name: Install packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e phydrus
+          pip install -e hmse-utils
+          pip install -r requirements.txt
+          pip install -r requirements_extra_tests.txt
+
+      - name: Test with pytest
+        run: |
+          pip install pytest
+          pytest hmse-utils/tests

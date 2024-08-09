@@ -1,0 +1,31 @@
+name: Build latest Hydrus simulation job for HMSE k8s deployment
+on:
+  push:
+    branches: [master]
+    paths:
+      - k8s-jobs/hydrus-1d-linux/**
+
+env:
+  IMAGE_NAME: hydrus-1d-linux
+
+jobs:
+
+  build_docker_image:
+
+    name: Build Docker image for Hydrus 1D Linux simulation
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+          
+      - name: Build Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./k8s-jobs/hydrus-1d-linux/Dockerfile
+          tags: watermodelling/${{env.IMAGE_NAME}}:latest-pre

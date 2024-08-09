@@ -1,0 +1,28 @@
+name: Build latest Hydrus 1D application for linux
+on:
+  push:
+    branches: [master]
+    paths:
+      - hydrus-1d-linux/**
+
+jobs:
+
+  build_hydrus_app:
+
+    name: Build linux version of Hydrus 1D from sources
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Setup environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install gfortran make -y
+
+      - name: Build exec from sources using gfortran and Make
+        run: |
+          cd hydrus-1d-linux/src
+          make hydrus

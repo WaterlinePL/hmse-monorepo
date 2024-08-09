@@ -1,0 +1,14 @@
+Flask==2.1.3
+flask-paginate==2022.1.8
+flopy==3.7.0
+Jinja2==3.1.2
+numpy
+phydrus==0.3.0
+scipy
+StrEnum==0.4.8
+Werkzeug==2.2.0
+zipp==3.8.1
+docker>=5.0.3
+opencv-python
+hmse_utils==1.0.0
+minio==7.1.12

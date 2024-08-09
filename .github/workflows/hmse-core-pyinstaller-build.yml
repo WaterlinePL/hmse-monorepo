@@ -1,0 +1,36 @@
+name: Build latest HMSE application artifacts for desktop deployment
+on:
+  push:
+    branches: [master]
+    paths:
+      - hmse-core/**
+      - hmse-utils/**
+      - phydrus/**
+
+jobs:
+  pyinstaller-build-hmse-core:
+    runs-on: windows-latest
+    name: Build executable of HMSE core web application for Desktop deployment using Pyinstaller
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install packages from repo
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller==6.9.0
+          pip install -e .\phydrus
+          pip install -e .\hmse-utils
+          pip install -r requirements.txt
+          pip list
+
+      - name: Build HMSE desktop executable package
+        run: |
+          pyinstaller --onedir --name "hmse" --paths "phydrus" --add-data ".\hmse-core\server\templates;server\templates" --add-data ".\hmse-core\server\static;server\static" hmse-core\main.py

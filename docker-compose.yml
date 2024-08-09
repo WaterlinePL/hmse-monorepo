@@ -1,0 +1,8 @@
+services:
+  webapp:
+    image: watermodelling/hmse-docker:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./workspace:/hmse-core/workspace
+      - /var/run/docker.sock:/var/run/docker.sock

@@ -1,0 +1,30 @@
+name: Test packaging HMSE Helm chart
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - hmse-helm-chart/**
+
+env:
+  AIRFLOW_TEMPLATE_REPO: https://airflow-helm.github.io/charts
+  AIRFLOW_TEMPLATE_VERSION: 8.7.0
+
+jobs:
+  package_helm_chart:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Make package and index using Helm
+        run: |
+          helm repo add airflow-stable ${{ env.AIRFLOW_TEMPLATE_REPO }}
+          helm pull airflow-stable/airflow --version ${{ env.AIRFLOW_TEMPLATE_VERSION }} -d hmse-helm-chart/hmse/charts
+          helm package hmse-helm-chart/hmse -d hmse-helm-chart/charts

@@ -1,0 +1,20 @@
+FROM ubuntu:22.04
+RUN apt-get dist-upgrade
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt install gcc g++ ffmpeg libsm6 libxext6 gfortran gfortran python3 python3-pip -y
+RUN DEBIAN_FRONTEND=noninteractive apt install apt-transport-https ca-certificates curl software-properties-common -y
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+RUN apt-cache policy docker-ce
+RUN apt install docker-ce -y
+COPY phydrus /phydrus
+RUN pip install -e /phydrus
+COPY hmse-utils /hmse-utils
+RUN pip install -e /hmse-utils
+COPY requirements.txt requirements.txt
+RUN python3 -m pip install -r requirements.txt
+COPY hmse-core /hmse-core
+EXPOSE 8080
+ENV PYTHONPATH /hmse-core
+WORKDIR /hmse-core
+CMD ["python3", "main.py", "--deployment", "docker"]

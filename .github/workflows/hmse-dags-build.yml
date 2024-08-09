@@ -1,0 +1,31 @@
+name: Build latest image with embedded HMSE DAGs for HMSE k8s deployment
+on:
+  push:
+    branches: [master]
+    paths:
+      - hmse-dags/**
+
+env:
+  IMAGE_NAME: airflow
+
+jobs:
+
+  build_docker_image:
+
+    name: Build Docker image for Airflow with HMSE DAGs
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+          
+      - name: Build Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./hmse-dags/Dockerfile
+          tags: watermodelling/${{env.IMAGE_NAME}}:2.5.0-p3.7-latest-pre
