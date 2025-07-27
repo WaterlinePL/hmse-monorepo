@@ -37,24 +37,13 @@ Installation and development manuals are listed below:
 
 #### Desktop
 There are 2 ways you can run desktop version of HMSE web application:
+* Running prebuilt executables from a release (recommended for Windows OS)
+  1. Find latest version of desktop version in the Github [releases](https://github.com/WaterlinePL/hmse-monorepo/releases).
+  2. Download the .zip archive `hmse-desktop-<version>.zip` (available [here](https://github.com/WaterlinePL/hmse-monorepo/releases/download/desktop-1.0.0/hmse-desktop-1.0.0.zip))
+  3. Unpack .zip archive
+  4. Launch `hmse.exe` (in archive: `hmse/hmse.exe`)
+  5. Complete application configuration described below
 * Running using Python interpreter - available in [Runnning python scripts](https://github.com/WaterlinePL/hmse-monorepo?tab=readme-ov-file#running-python-scripts) section below
-* Running prebuilt executables from a release
-  * Prebuilt executables:
-    1. Find latest version of desktop version in the Github [releases](https://github.com/WaterlinePL/hmse-monorepo/releases).
-    2. Download the .zip archive `hmse-desktop-<version>.zip` (available [here](https://github.com/WaterlinePL/hmse-monorepo/releases/download/desktop-1.0.0/hmse-desktop-1.0.0.zip)) # TODO
-    3. Unpack .zip archive
-    4. Launch `hmse.exe` (in archive: `hmse/hmse.exe`)
-    5. Complete application configuration described below
-  * Manual build:
-aasa # TODO 
-```commandline
-pip install -r requirements.txt
-pyinstaller.exe --onedir -n hmse --paths ".\hmse-core" \
-                --add-data ".\hmse-core\server\templates;server\templates" \
-                --add-data ".\hmse-core\server\static;server\static"  \
-                hmse-core\main.py
-```
-
 
 Desktop application configuration:
 In order to run a simulation in the application, the user must download following two programs:
@@ -208,11 +197,12 @@ Required software for building:
 To generate an executable from the source code, follow these steps in the root directory of the repository (on a Windows OS):
 ```commandline
 pip install -r requirements.txt
-pyinstaller.exe --onedir -n hmse --paths ".\server" \
-                --add-data ".\server\templates;templates" \
-                --add-data ".\server\static;static"  \
-                .\server\main.py
+pyinstaller.exe --onedir -n hmse --paths ".\hmse-core" \
+                --add-data ".\hmse-core\server\templates;server\templates" \
+                --add-data ".\hmse-core\server\static;server\static"  \
+                hmse-core\main.py
 ```
+
 
 After creating a build with PyInstaller, the executable is located in the `dist` folder (`hmse.exe`).
 
