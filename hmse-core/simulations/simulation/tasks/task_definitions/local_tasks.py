@@ -210,6 +210,7 @@ def __modflow_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
 # Util functions
 def __run_local_program(exec_path: str, args: List[str], log_handle=None):
     logger.debug(f"Running local executable: {exec_path} (args: {args})")
-    return subprocess.Popen([exec_path, *args],
+    cmd = f"{exec_path} {' '.join(args)}"
+    return subprocess.Popen(cmd,
                             shell=True, text=True,
                             stdin=subprocess.PIPE, stdout=log_handle, stderr=log_handle)

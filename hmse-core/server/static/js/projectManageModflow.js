@@ -36,6 +36,20 @@ function isModflowPresent() {
     return !document.getElementById("modflowModelGridSize").hidden;
 }
 
+function onProjectTypeChange(checkbox) {
+    const mfHeadline = document.getElementById('modflowModelHeadline');
+    const mfLabel = document.getElementById('modflowModelLabel');
+    if (checkbox.checked) {
+        // SEAWAT mode
+        mfHeadline.textContent = "SEAWAT model";
+        mfLabel.textContent = "SEAWAT model";
+    } else {
+        // MODFLOW-2005 mode
+        mfHeadline.textContent = "MODFLOW-2005 model";
+        mfLabel.textContent = "MODFLOW-2005 model";
+    }
+}
+
 async function sendModflowModelAfterSelected(projectId) {
     const elem = document.getElementById('modflowUploadInput');
     if (!elem.files) {

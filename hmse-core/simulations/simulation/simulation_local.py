@@ -46,21 +46,21 @@ class Simulation:
             logger.info(f"Running task: {chapter_status.get_stages_names()[i]}")
 
             # Launch and monitor stage
-            try:
-                task_start = time.time()
-                workflow_task(
-                    self.project_metadata,
-                    stage_name=chapter_status.get_stages_names()[i],
-                )
-                task_end = time.time()
-                task_name = str(chapter_status.get_stages_statuses()[i].name)
-                self.time_measurements[task_name] = task_end - task_start
-                logger.info(f"Task {chapter_status.get_stages_names()[i]} ended successfully")
-            except Exception as error:
-                desc = str(error)
-                chapter_status.set_stage_status(SimulationStageStatus.ERROR, stage_idx=i, error=desc)
-                logger.error(f"Task {chapter_status.get_stages_names()[i]} failed! Simulation interrupted!")
-                raise HTTPException(description=desc)
+            # try:
+            task_start = time.time()
+            workflow_task(
+                self.project_metadata,
+                stage_name=chapter_status.get_stages_names()[i],
+            )
+            task_end = time.time()
+            task_name = str(chapter_status.get_stages_statuses()[i].name)
+            self.time_measurements[task_name] = task_end - task_start
+            logger.info(f"Task {chapter_status.get_stages_names()[i]} ended successfully")
+            # except Exception as error:
+            #     desc = str(error)
+            #     chapter_status.set_stage_status(SimulationStageStatus.ERROR, stage_idx=i, error=desc)
+            #     logger.error(f"Task {chapter_status.get_stages_names()[i]} failed! Simulation interrupted!")
+            #     raise HTTPException(description=desc)
 
             chapter_status.set_stage_status(SimulationStageStatus.SUCCESS, stage_idx=i)
 
