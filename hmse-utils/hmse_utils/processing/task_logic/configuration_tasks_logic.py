@@ -38,16 +38,19 @@ def extract_output_to_json(project_id: str, modflow_id: str, **kwargs):
     nam_file = modflow_utils.scan_for_modflow_file(modflow_dir)
     modflow_model = flopy.modflow.Modflow.load(nam_file, model_ws=modflow_dir, forgive=True)
 
-    fhd_path = modflow_utils.scan_for_modflow_file(modflow_dir, ext=".fhd")
-    if fhd_path is not None:
-        fhd_path = os.path.join(modflow_dir, fhd_path)
-        modflow_output = flopy.utils.formattedfile.FormattedHeadFile(fhd_path, precision="single")
+    hed_file = modflow_utils.find_head_file(modflow_dir)
+    if hed_file is not None:
+        hed_path = os.path.join(modflow_dir, hed_file)
+        if hed_file.endswith(".fhd"):
+            modflow_output = flopy.utils.formattedfile.FormattedHeadFile(hed_path, precision="single")
+        else:
+            modflow_output = flopy.utils.HeadFile(hed_path, precision="single")
 
-        result_fhd = np.array([modflow_output.get_data(idx=stress_period)
+        result_hed = np.array([modflow_output.get_data(idx=stress_period)
                                for stress_period in range(modflow_model.nper)])
 
         with open(local_paths.get_output_json_path(project_id), 'w') as handle:
-            json.dump(result_fhd.tolist(), handle, indent=2)
+            json.dump(result_hed.tolist(), handle, indent=2)
             modflow_output.close()
     else:
         logger.warning(f"Skipping JSON output export for modflow model {modflow_id} in project {project_id} "
@@ -77,8 +80,8 @@ def create_hydrus_models_for_zones(project_id: str, shapes_to_hydrus: Dict[str, 
                                                                  used_hydrus_models=hydrus_to_shapes)
 
 
-def pre_configure_iteration(project_id: str, **kwargs):
-    feedback_loop_file_management.pre_configure_iteration(project_id)
+def pre_configure_iteration(project_id: str, remove_prev_step_dir: bool = True, **kwargs):
+    feedback_loop_file_management.pre_configure_iteration(project_id, remove_prev_step_dir)
 
 
 def cleanup_project_volume(project_id: str, **kwargs):

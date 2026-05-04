@@ -115,16 +115,22 @@ def __recharge_update(modflow_model: Modflow, shapes_for_model: List[np.ndarray]
 
             # add calculated hydrus average sum(vBot) to modflow recharge array
             period_duration = int(stress_period_duration)
-            final_sp_recharge = sum_v_bot.values[stress_period_duration_iter + period_duration - 1]
+            period_duration_in_days = modflow_utils.convert_time_units_to_days(
+                period_duration,
+                modflow_model.modeltime.time_units,
+            )
+
+            # Hydrus is in days
+            final_sp_recharge = sum_v_bot.values[stress_period_duration_iter + period_duration_in_days - 1]
             starting_sp_recharge = sum_v_bot.values[stress_period_duration_iter]
-            avg_sum_v_bot = (final_sp_recharge - starting_sp_recharge) / stress_period_duration
+            avg_sum_v_bot = (final_sp_recharge - starting_sp_recharge) / period_duration    # Keeping old time units
             recharge_modflow_array[mask] = avg_sum_v_bot
 
             # save calculated recharge to modflow model
             modflow_model.rch.rech[idx] = recharge_modflow_array
 
             # update stress period duration iterator
-            stress_period_duration_iter += period_duration
+            stress_period_duration_iter += period_duration_in_days
 
 
 def transfer_water_level_to_hydrus(project_id: str,

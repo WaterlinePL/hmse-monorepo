@@ -40,7 +40,7 @@ def __hydrus_simulation_warmup(project_metadata: ProjectMetadata, **kwargs) -> N
     SimulationTasks.hydrus_simulation(project_metadata)
 
 
-@docker(identification=SimulationStageName.MODFLOW_SIMULATION)
+@docker(identification=SimulationStageName.CORE_SIMULATION)
 def __modflow_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
     logger.debug(f"Launching docker task for stage: {kwargs['stage_name']}")
     deployer = ModflowDockerDeployer(

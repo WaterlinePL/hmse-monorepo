@@ -6,11 +6,12 @@ from hmse_utils.processing.modflow.modflow_step import ModflowStepType
 from simulations.projects.project_metadata import ProjectMetadata
 from simulations.projects.simulation_mode import SimulationMode
 from simulations.simulation.simulation_chapter import SimulationChapter
-
+from simulations.simulation.simulation_enums import SimulationCoreMode
 
 logger = logging.getLogger(__name__)
 
-def configure_simulation(project_metadata: ProjectMetadata) -> 'Simulation':
+
+def configure_simulation(project_metadata: ProjectMetadata, mode: SimulationCoreMode) -> 'Simulation':
     logger.info(f"Configuring simulation for project: {project_metadata.project_id}")
     sim_chapters = __chapters_from_metadata(project_metadata)
     logger.info(f"Simulation for project {project_metadata.project_id} has been configured "
@@ -18,6 +19,7 @@ def configure_simulation(project_metadata: ProjectMetadata) -> 'Simulation':
     return deployment_config.get_deployment_class(identification='simulation')(
         project_metadata=project_metadata,
         sim_chapters=sim_chapters,
+        mode=mode,
     )
 
 

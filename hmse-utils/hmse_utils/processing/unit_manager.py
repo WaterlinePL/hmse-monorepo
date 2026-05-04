@@ -16,7 +16,8 @@ class LengthUnit(StrEnum):
             "cm": LengthUnit.cm,
             "m": LengthUnit.m,
             "meters": LengthUnit.m,
-            "ft": LengthUnit.ft
+            "ft": LengthUnit.ft,
+            "undefined": LengthUnit.cm,
         }[unit.lower()]
 
 

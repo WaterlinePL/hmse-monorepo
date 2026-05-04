@@ -104,7 +104,7 @@ def hydrus_simulation_warmup(project_metadata: ProjectMetadata, **kwargs) -> Non
     __monitor_mapped_airflow_job(**kwargs)
 
 
-@k8s(identification=SimulationStageName.MODFLOW_SIMULATION)
+@k8s(identification=SimulationStageName.CORE_SIMULATION)
 def modflow_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
     logger.debug(f"Launching airflow task for stage: {kwargs['stage_name']}")
     __monitor_mapped_airflow_job(**kwargs)

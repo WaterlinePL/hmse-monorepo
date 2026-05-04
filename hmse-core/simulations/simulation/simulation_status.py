@@ -2,17 +2,19 @@ from typing import List
 
 from simulations.projects.project_metadata import ProjectMetadata
 from simulations.simulation.simulation_chapter import SimulationChapter
-from simulations.simulation.simulation_enums import SimulationStageName, SimulationStageStatus, SimulationStage
+from simulations.simulation.simulation_enums import SimulationStageName, SimulationStageStatus, SimulationStage, \
+    SimulationCoreMode
 from simulations.simulation.tasks import hmse_task
 
 
 class ChapterStatus:
 
-    def __init__(self, chapter: SimulationChapter, metadata: ProjectMetadata):
+    def __init__(self, chapter: SimulationChapter, metadata: ProjectMetadata, core_mode: SimulationCoreMode):
         stages = [hmse_task.get_stage_name(t) for t in chapter.get_simulation_tasks(metadata)]
         self.chapter = chapter
         self.stages = stages
         self.stages_statuses = [SimulationStage(stage, SimulationStageStatus.PENDING) for stage in stages]
+        self._core_mode = core_mode
 
     def get_stages_names(self) -> List[SimulationStageName]:
         return self.stages
@@ -28,7 +30,7 @@ class ChapterStatus:
         stage_statuses = [
             {
                 "id": f"{stage.name.get_as_id()}{i}",
-                "name": stage.name.get_name(),
+                "name": stage.name.get_name(self._core_mode),
                 "status": stage.status,
                 "error": stage.error,
             } for i, stage in enumerate(self.stages_statuses)

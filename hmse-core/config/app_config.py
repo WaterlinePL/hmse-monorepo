@@ -42,6 +42,7 @@ class AppConfig:
 
     # desktop specific config
     modflow_program_path: Optional[str] = None
+    seawat_program_path: Optional[str] = None
     hydrus_program_path: Optional[str] = None
 
     # docker specific config

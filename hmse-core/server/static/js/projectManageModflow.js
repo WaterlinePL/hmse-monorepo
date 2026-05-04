@@ -36,6 +36,10 @@ function isModflowPresent() {
     return !document.getElementById("modflowModelGridSize").hidden;
 }
 
+function onProjectTypeChange(checkbox) {
+    simulationCoreMode = checkbox.checked ? "seawat" : "modflow-2005";
+}
+
 async function sendModflowModelAfterSelected(projectId) {
     const elem = document.getElementById('modflowUploadInput');
     if (!elem.files) {
