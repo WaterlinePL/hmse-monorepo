@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Literal
 
 import flask
 from flask import request, Blueprint, jsonify
@@ -7,6 +8,7 @@ from werkzeug.exceptions import abort
 from server import endpoints, cookie_utils, path_checker
 from simulations import simulation_service
 from simulations.projects import project_service
+from simulations.simulation.simulation_enums import SimulationCoreMode
 
 simulations = Blueprint('simulations', __name__)
 
@@ -24,6 +26,7 @@ def simulation(project_id: str):
             abort(404)
         return jsonify([chapter.to_json(i) for i, chapter in enumerate(all_chapters_statuses)])
     else:
+        mode = SimulationCoreMode(request.json.get("coreMode", "modflow-2005"))
         metadata = project_service.get(project_id)
-        simulation_service.get().run_simulation(metadata)
+        simulation_service.get().run_simulation(metadata, mode=mode)
         return flask.Response(status=HTTPStatus.OK)

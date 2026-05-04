@@ -6,7 +6,7 @@ from typing import Optional
 import flopy
 import numpy as np
 from flopy.modflow import Modflow, ModflowBas
-from flopy.utils import FormattedHeadFile
+from flopy.utils import FormattedHeadFile, HeadFile
 
 from hmse_utils.processing.local_fs_configuration import local_paths
 from hmse_utils.processing.local_fs_configuration.feedback_loop_file_management import find_previous_simulation_step_dir
@@ -30,25 +30,31 @@ def get_avg_water_depth_for_shape(project_id: str,
                                   shape_id: str,
                                   use_modflow_results: bool) -> float:
     logger.debug(f"Getting average water depth for Modflow model {modflow_id} in simulation project {project_id}")
-    model_dir = local_paths.get_modflow_model_path(project_id, modflow_id, simulation_mode=True)
-    nam_file_name = modflow_utils.scan_for_modflow_file(model_dir, ext=".nam")
+    modflow_dir = local_paths.get_modflow_model_path(project_id, modflow_id, simulation_mode=True)
+    nam_file_name = modflow_utils.scan_for_modflow_file(modflow_dir, ext=".nam")
 
     packages = ["dis", "bas6"]
     if use_modflow_results:
-        fhd_file_name = modflow_utils.scan_for_modflow_file(model_dir, ext=".fhd")
-        fhd_data = FormattedHeadFile(os.path.join(model_dir, fhd_file_name))
+        hed_file = modflow_utils.find_head_file(modflow_dir)
+        if hed_file is not None:
+            hed_path = os.path.join(modflow_dir, hed_file)
+            if hed_file.endswith(".fhd"):
+                modflow_output = flopy.utils.formattedfile.FormattedHeadFile(hed_path, precision="single")
+            else:
+                modflow_output = flopy.utils.HeadFile(hed_path, precision="single")
     else:
-        fhd_data = None
+        modflow_output = None
 
-    model = Modflow.load(nam_file_name, model_ws=model_dir, load_only=packages, forgive=True)
+    model = Modflow.load(nam_file_name, model_ws=modflow_dir, load_only=packages, forgive=True)
     mask = np.load(local_paths.get_shape_path(project_id, shape_id))
     avg_terrain_lvl = __get_avg_terrain_level(model, shape_mask=mask)
 
-    inbound = next(pkg for pkg in model.packagelist if isinstance(pkg, ModflowBas)).ibound[0].array
-    avg_water_lvl = __get_avg_water_level(model, shape_mask=mask * inbound, fhd_data=fhd_data)
+    bas_pkg = next(pkg for pkg in model.packagelist if isinstance(pkg, ModflowBas))
+    inbound = bas_pkg.ibound[0].array
+    avg_water_lvl = __get_avg_water_level(model, shape_mask=mask * inbound, fhd_data=modflow_output)
 
     if use_modflow_results:
-        fhd_data.close()
+        modflow_output.close()
     return avg_terrain_lvl - avg_water_lvl
 
 
@@ -61,11 +67,11 @@ def __get_avg_water_level(model: Modflow, shape_mask: np.ndarray,
                           fhd_data: Optional[FormattedHeadFile] = None) -> float:
     logger.debug(f"Calculating average water level")
     if fhd_data:
-        water_lvl_array = fhd_data.get_data()[0]
+        water_lvl_array = fhd_data.get_data(idx=0)
     else:
         bas_package = next(pkg for pkg in model.packagelist if isinstance(pkg, ModflowBas))
         water_lvl_array = bas_package.strt[0].array
-    return float(np.average(water_lvl_array[shape_mask == 1]))
+    return float(np.average(water_lvl_array[..., shape_mask == 1]))
 
 
 def __create_temporary_model(ref_modflow_dir: str, prev_modflow_dir: Optional[str], new_modflow_dir: str, step: int):
@@ -79,15 +85,18 @@ def __create_temporary_model(ref_modflow_dir: str, prev_modflow_dir: Optional[st
 
     # Initial conditions from previous iteration
     if prev_modflow_dir is not None:
-        fhd_filename = modflow_utils.scan_for_modflow_file(prev_modflow_dir, ext=".fhd")
+        fhd_filename = modflow_utils.find_head_file(prev_modflow_dir)
         prev_model_fhd_path = os.path.join(prev_modflow_dir, fhd_filename)
         shutil.copy(prev_model_fhd_path, os.path.join(new_modflow_dir, fhd_filename))
 
-        prev_model_fhd = FormattedHeadFile(prev_model_fhd_path)
+        if prev_model_fhd_path.endswith(".fhd"):
+            prev_model_hed = FormattedHeadFile(prev_model_fhd_path)
+        else:
+            prev_model_hed = HeadFile(prev_model_fhd_path)
         bas_package = next(pkg for pkg in dst_model.packagelist if isinstance(pkg, ModflowBas))
-        bas_package.strt = prev_model_fhd.get_data()
+        bas_package.strt = prev_model_hed.get_data()
         bas_package.write_file()
-        prev_model_fhd.close()
+        prev_model_hed.close()
 
     # Crop packages to one timestep
     modflow_package_manager.create_packages_for_step(dst_model, step)

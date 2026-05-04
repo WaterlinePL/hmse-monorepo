@@ -23,7 +23,7 @@ def create_per_shape_hydrus_models(project_id: str, used_hydrus_models: Dict[str
             shutil.copytree(ref_hydrus_path, new_model_path)
 
 
-def pre_configure_iteration(project_id: str) -> None:
+def pre_configure_iteration(project_id: str, remove_prev_step_dir: bool) -> None:
     logger.debug(f"Preconfiguring for project: {project_id}")
     prev_sim_step_dir = find_previous_simulation_step_dir(project_id)
     if not prev_sim_step_dir:
@@ -39,6 +39,9 @@ def pre_configure_iteration(project_id: str) -> None:
                     os.path.join(step_dir_path, "modflow"))
     shutil.copytree(local_paths.get_hydrus_dir(project_id, simulation_mode=True),
                     os.path.join(step_dir_path, "hydrus"))
+
+    if remove_prev_step_dir and prev_sim_step_dir and os.path.exists(prev_sim_step_dir):
+        shutil.rmtree(prev_sim_step_dir)
 
 
 def find_previous_simulation_step_dir(project_id: str) -> Optional[str]:

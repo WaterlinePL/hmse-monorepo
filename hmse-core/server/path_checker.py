@@ -38,7 +38,8 @@ def path_check_simulate_access(cookie: UserID) -> Optional[Response]:
     if config.deployment == ApplicationDeployment.DESKTOP:
         logger.debug(f"Checking simulation programs config for user: {cookie}")
         # Here carry out check for local executables or delete for other deployments
-        if not (app_config.get_config().hydrus_program_path and app_config.get_config().modflow_program_path):
+        core_program_path = config.modflow_program_path or config.seawat_program_path
+        if not core_program_path:
             return redirect(endpoints.CONFIGURATION)
 
     return None

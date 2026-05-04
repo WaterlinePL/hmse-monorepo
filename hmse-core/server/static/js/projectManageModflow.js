@@ -37,17 +37,7 @@ function isModflowPresent() {
 }
 
 function onProjectTypeChange(checkbox) {
-    const mfHeadline = document.getElementById('modflowModelHeadline');
-    const mfLabel = document.getElementById('modflowModelLabel');
-    if (checkbox.checked) {
-        // SEAWAT mode
-        mfHeadline.textContent = "SEAWAT model";
-        mfLabel.textContent = "SEAWAT model";
-    } else {
-        // MODFLOW-2005 mode
-        mfHeadline.textContent = "MODFLOW-2005 model";
-        mfLabel.textContent = "MODFLOW-2005 model";
-    }
+    simulationCoreMode = checkbox.checked ? "seawat" : "modflow-2005";
 }
 
 async function sendModflowModelAfterSelected(projectId) {

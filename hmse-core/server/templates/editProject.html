@@ -53,12 +53,12 @@
             </div>
         </div>
         <div class="text-center" style="font-size: 22px">
-            <a>MODFLOW-2005 project</a>
+            <a>MODFLOW-2005 simulation</a>
             <label class="switch">
                     <input type="checkbox" onclick="onProjectTypeChange(this);">
                 <span class="slider round"></span>
             </label>
-            <a>SEAWAT project</a>
+            <a>SEAWAT simulation</a>
         </div>
     </div>
     <div class="row justify-content-md-center">
@@ -83,11 +83,11 @@
                                     </svg>
                                 </button>
                             </div>
-                            <h3 id="modflowModelHeadline" style="text-align: center">MODFLOW-2005 model</h3>
+                            <h3 id="modflowModelHeadline" style="text-align: center">MODFLOW-2005/SEAWAT model</h3>
                         </div>
                         <ul class="list-group list-group-flush">
                             <li class="list-group-item ">
-                                <span id="modflowModelLabel" class="slice-column left">MODFLOW-2005 model</span>
+                                <span id="modflowModelLabel" class="slice-column left">MODFLOW-2005/SEAWAT model</span>
                                 <span id="modflowModelId" class="slice-column right">
                                     {{ metadata.modflow_metadata.modflow_id if metadata.modflow_metadata else 'None' }}
                                 </span>

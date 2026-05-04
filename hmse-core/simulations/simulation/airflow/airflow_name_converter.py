@@ -18,7 +18,7 @@ def convert_hmse_task_to_airflow_task_name(hmse_task: SimulationStageName) -> st
         SimulationStageName.HYDRUS_SIMULATION: "hydrus-simulation",
         SimulationStageName.HYDRUS_SIMULATION_WARMUP: "hydrus-simulation",
         SimulationStageName.HYDRUS_TO_MODFLOW_DATA_PASSING: "transfer-hydrus-results-to-modflow",
-        SimulationStageName.MODFLOW_SIMULATION: "modflow-simulation",
+        SimulationStageName.CORE_SIMULATION: "modflow-simulation",
         SimulationStageName.OUTPUT_EXTRACTION: "upload-simulation-results",
         SimulationStageName.CLEANUP: "cleanup-simulation-volume-content",
         SimulationStageName.INITIALIZE_NEW_ITERATION_FILES: "initialize-feedback-iteration",

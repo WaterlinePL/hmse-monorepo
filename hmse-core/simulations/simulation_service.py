@@ -1,12 +1,13 @@
 import logging
 from dataclasses import dataclass, field
 from threading import Thread
-from typing import Dict, List
+from typing import Dict, List, Literal
 
 from simulations.projects import project_service
 from simulations.projects.project_metadata import ProjectMetadata
 from simulations.projects.typing_help import ProjectID
 from simulations.simulation import simulation_configurator
+from simulations.simulation.simulation_enums import SimulationCoreMode
 from simulations.simulation.simulation_status import ChapterStatus
 
 __INSTANCE = None
@@ -18,10 +19,10 @@ logger = logging.getLogger(__name__)
 class SimulationService:
     simulations: Dict[ProjectID, 'Simulation'] = field(default_factory=dict)
 
-    def run_simulation(self, project_metadata: ProjectMetadata) -> None:
+    def run_simulation(self, project_metadata: ProjectMetadata, mode: SimulationCoreMode) -> None:
         logger.info(f"Starting simulation for project: {project_metadata.project_id}")
 
-        simulation = simulation_configurator.configure_simulation(project_metadata)
+        simulation = simulation_configurator.configure_simulation(project_metadata, mode=mode)
         self.register_simulation_if_necessary(simulation)
 
         project_metadata.finished = False

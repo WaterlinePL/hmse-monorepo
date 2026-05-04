@@ -11,7 +11,7 @@ from simulations.projects.project_metadata import ProjectMetadata
 from simulations.projects.typing_help import ProjectID
 from simulations.simulation.airflow import airflow_simulation_service
 from simulations.simulation.simulation_chapter import SimulationChapter
-from simulations.simulation.simulation_enums import SimulationStageStatus, SimulationStageName
+from simulations.simulation.simulation_enums import SimulationStageStatus, SimulationStageName, SimulationCoreMode
 from simulations.simulation.simulation_status import ChapterStatus
 
 IDENTIFICATION = 'simulation'
@@ -22,10 +22,11 @@ logger = logging.getLogger(__name__)
 @k8s(identification=IDENTIFICATION)
 class Simulation:
 
-    def __init__(self, project_metadata: ProjectMetadata, sim_chapters: List[SimulationChapter]):
+    def __init__(self, project_metadata: ProjectMetadata, sim_chapters: List[SimulationChapter], mode: SimulationCoreMode):
         self.project_metadata = project_metadata
-        self.chapter_statuses = [ChapterStatus(chapter, project_metadata) for chapter in sim_chapters]
+        self.chapter_statuses = [ChapterStatus(chapter, project_metadata, mode) for chapter in sim_chapters]
         self.time_measurements = {}
+        self._mode = mode
 
     def run_simulation(self):
         logger.info(f"Running airflow simulation for project: {self.project_metadata.project_id}")
@@ -60,7 +61,8 @@ class Simulation:
                     self.project_metadata,
                     dag_run_id=dag_run_id,
                     chapter_name=chapter_status.chapter,
-                    stage_name=chapter_status.get_stages_names()[i]
+                    stage_name=chapter_status.get_stages_names()[i],
+                    core_mode=self._mode, # TODO: atm unused
                 )
                 task_end = time.time()
                 task_name = str(chapter_status.get_stages_statuses()[i].name)
@@ -74,7 +76,7 @@ class Simulation:
 
             chapter_status.set_stage_status(SimulationStageStatus.SUCCESS, stage_idx=i)
 
-            if chapter_status.get_stages_statuses()[i].name == SimulationStageName.MODFLOW_SIMULATION:
+            if chapter_status.get_stages_statuses()[i].name == SimulationStageName.CORE_SIMULATION:
                 total_chapter_end = time.time()
                 self.time_measurements["TOTAL"] = total_chapter_end - total_chapter_start
                 logger.info(f"Simulation time measurements: {self.time_measurements}")

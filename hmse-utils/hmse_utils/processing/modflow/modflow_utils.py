@@ -44,7 +44,7 @@ def extract_and_fix_metadata(modflow_archive, tmp_dir: str) -> Tuple[
     with ZipFile(modflow_path, 'r') as archive:
         archive.extractall(tmp_dir)
     os.remove(modflow_path)
-    # __validate_model(tmp_dir)
+    __validate_model(tmp_dir)
     __fix_modflow_project(tmp_dir)
 
     model = flopy.modflow.Modflow.load(scan_for_modflow_file(tmp_dir),
@@ -55,7 +55,7 @@ def extract_and_fix_metadata(modflow_archive, tmp_dir: str) -> Tuple[
     model_shape = (model.nrow, model.ncol)
     model_steps = [
         ModflowStep(
-            duration=__convert_time_units_to_days(duration, model.modeltime.time_units),
+            duration=convert_time_units_to_days(duration, model.modeltime.time_units),
             type=ModflowStepType.from_bool(is_steady_state),
         )
         for is_steady_state, duration in zip(model.modeltime.steady_state, model.modeltime.perlen)
@@ -228,7 +228,17 @@ __TIME_UNIT_CONVERSION = {
     'hours': 1.0 / 24.0,
     'days': 1,
 }
-def __convert_time_units_to_days(duration: float, dur_unit: str) -> int:
+
+
+def find_head_file(modflow_dir: str):
+    hed_file = scan_for_modflow_file(modflow_dir, ext=".fhd")
+    if not hed_file:
+        hed_file = scan_for_modflow_file(modflow_dir, ext=".hed")
+    if not hed_file:
+        hed_file = scan_for_modflow_file(modflow_dir, ext=".hds")
+    return hed_file
+
+def convert_time_units_to_days(duration: float, dur_unit: str) -> int:
     ratio = __TIME_UNIT_CONVERSION.get(dur_unit, 0)
     if ratio == 0:
         raise KeyError(f"Unknown Modflow time unit: {dur_unit}")

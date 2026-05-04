@@ -32,11 +32,15 @@ def handle_stress_periods_oc(stress_period_data: Dict, step: int):
 
 
 def handle_dis_pkg(pkg: ModflowDis, step: int):
-    pkg.nstp = pkg.nstp[step]
-    pkg.perlen = pkg.perlen[step]
-    pkg.steady = [pkg.steady[step]] * pkg.nper
-    pkg.tsmult = pkg.tsmult[step]
     pkg.nper = 1
+    pkg.nstp.shape = (1,)
+    pkg.nstp = pkg.nstp[step]
+    pkg.perlen.shape = (1,)
+    pkg.perlen = pkg.perlen[step]
+    pkg.steady.shape = (1,)
+    pkg.steady = [pkg.steady[step]] * pkg.nper
+    pkg.tsmult.shape = (1,)
+    pkg.tsmult = pkg.tsmult[step]
 
 
 __SPECIAL_TREATMENT_PACKAGES = {

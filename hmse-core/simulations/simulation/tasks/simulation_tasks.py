@@ -23,9 +23,9 @@ class SimulationTasks:
         )
 
     @staticmethod
-    @hmse_task(stage_name=SimulationStageName.MODFLOW_SIMULATION)
+    @hmse_task(stage_name=SimulationStageName.CORE_SIMULATION)
     def modflow_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
-        deployment_config.get_deployment_function(SimulationStageName.MODFLOW_SIMULATION)(
+        deployment_config.get_deployment_function(SimulationStageName.CORE_SIMULATION)(
             project_metadata,
             **kwargs
         )

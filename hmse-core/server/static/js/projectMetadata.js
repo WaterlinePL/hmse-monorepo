@@ -8,6 +8,8 @@ const ProjectConfig = {
     "hydrusToWeather": {}
 };
 
+let simulationCoreMode = "modflow-2005";
+
 const inactiveShapeId = "inactive_modflow_cells";
 
 function addShapeToHydrusMapping(shapeId, hydrusIdOrRechargeValue) {

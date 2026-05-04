@@ -139,7 +139,9 @@ async function runSimulation(projectId) {
     document.getElementById("downloadProjectBtn").hidden = true;
     const url = getEndpointForProjectId(Config.simulation, projectId);
     await fetch(url, {
-        method: "POST"
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({'coreMode': simulationCoreMode}),
     }).then(response => {
         if (response.status === 200) {
             showSuccessToast(jQuery, "Simulation started");

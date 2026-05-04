@@ -14,7 +14,7 @@ from hmse_utils.processing.modflow import modflow_utils
 from hmse_utils.processing.task_logic import configuration_tasks_logic, data_tasks_logic
 from simulations.projects.project_metadata import ProjectMetadata
 from simulations.projects.simulation_mode import SimulationMode
-from simulations.simulation.simulation_enums import SimulationStageName
+from simulations.simulation.simulation_enums import SimulationStageName, SimulationCoreMode
 from simulations.simulation.simulation_error import SimulationError
 from simulations.simulation.tasks.simulation_tasks import SimulationTasks
 
@@ -168,15 +168,21 @@ def __hydrus_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
         hydrus_to_launch = hydrus_utils.get_compound_hydrus_ids_for_feedback_loop(project_metadata.shapes_to_hydrus)
         hydrus_to_launch = [compound_hydrus_id for _, compound_hydrus_id in hydrus_to_launch]
 
+    current_dir = os.getcwd()
     for hydrus_id in hydrus_to_launch:
         model_path = local_paths.get_hydrus_model_path(project_metadata.project_id, hydrus_id, simulation_mode=True)
         hydrus_exec_path = path_formatter.convert_backslashes_to_slashes(
             app_config.get_config().hydrus_program_path)
+
+        hydrus_model_path = path_formatter.convert_backslashes_to_slashes(model_path)
+
+        os.chdir(hydrus_model_path)
         proc = __run_local_program(
             exec_path=hydrus_exec_path,
-            args=[path_formatter.convert_backslashes_to_slashes(model_path)]
+            args=[],
         )
         simulations.append(proc)
+        os.chdir(current_dir)
 
     for proc in simulations:
         proc.communicate(input="\n")  # Press enter to close program (blocking)
@@ -188,19 +194,23 @@ def __hydrus_simulation_warmup(project_metadata: ProjectMetadata, **kwargs) -> N
     SimulationTasks.hydrus_simulation(project_metadata)
 
 
-@desktop(identification=SimulationStageName.MODFLOW_SIMULATION)
-def __modflow_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
+@desktop(identification=SimulationStageName.CORE_SIMULATION)
+def __core_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
     logger.debug(f"Launching local task for stage: {kwargs['stage_name']}")
     modflow_id = project_metadata.modflow_metadata.modflow_id
     modflow_path = local_paths.get_modflow_model_path(project_metadata.project_id, modflow_id, simulation_mode=True)
+    core_mode = kwargs.get("core_mode", SimulationCoreMode.MODFLOW_2005)
 
     current_dir = os.getcwd()
-    modflow_exec_path = path_formatter.convert_backslashes_to_slashes(app_config.get_config().modflow_program_path)
+    if core_mode == SimulationCoreMode.MODFLOW_2005:
+        core_exec_path = path_formatter.convert_backslashes_to_slashes(app_config.get_config().modflow_program_path)
+    else:
+        core_exec_path = path_formatter.convert_backslashes_to_slashes(app_config.get_config().seawat_program_path)
     nam_file = modflow_utils.scan_for_modflow_file(modflow_path)
 
     os.chdir(modflow_path)
     proc = __run_local_program(
-        exec_path=modflow_exec_path,
+        exec_path=core_exec_path,
         args=[nam_file]
     )
     os.chdir(current_dir)
