@@ -5,10 +5,9 @@ const ProjectConfig = {
     "weatherFiles": [],
     "shapes": {},
     "shapesToHydrus": {},
-    "hydrusToWeather": {}
+    "hydrusToWeather": {},
+    "simulationCoreMode": undefined,
 };
-
-let simulationCoreMode = "modflow-2005";
 
 const inactiveShapeId = "inactive_modflow_cells";
 
@@ -98,7 +97,9 @@ async function fillProjectConfig(projectId) {
                 ProjectConfig.shapes = data["shapes"];
                 ProjectConfig.shapesToHydrus = data["shapes_to_hydrus"];
                 ProjectConfig.hydrusToWeather = data["hydrus_to_weather"];
+                ProjectConfig.simulationCoreMode = data["simulation_core_mode"];
                 fillMappings();
+                document.getElementById("simulationCoreModeCheckbox").checked = data["simulation_core_mode"] === "seawat";
             });
         } else {
             response.json().then(data => {

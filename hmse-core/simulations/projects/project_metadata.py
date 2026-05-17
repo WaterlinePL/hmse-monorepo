@@ -7,6 +7,7 @@ from hmse_utils.processing.modflow.modflow_metadata import ModflowMetadata
 from hmse_utils.processing.typing_help import HydrusID, ModflowID
 from simulations.projects.project_exceptions import UnknownShape, UnknownHydrusModel, DuplicateHydrusModel, \
     DuplicateWeatherFile, UnknownWeatherFile
+from simulations.projects.simulation_core_mode import SimulationCoreMode
 from simulations.projects.simulation_mode import SimulationMode
 from simulations.projects.typing_help import WeatherID, ShapeID, ProjectID, ShapeColor
 
@@ -37,6 +38,7 @@ class ProjectMetadata:
     hydrus_to_weather: Dict[HydrusID, WeatherID] = field(default_factory=dict)
 
     simulation_mode: SimulationMode = SimulationMode.SIMPLE_COUPLING
+    simulation_core_mode: SimulationCoreMode = SimulationCoreMode.MODFLOW_2005
 
     def __post_init__(self):
         self.hydrus_models = set(self.hydrus_models)

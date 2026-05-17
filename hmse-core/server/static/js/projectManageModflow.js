@@ -37,7 +37,8 @@ function isModflowPresent() {
 }
 
 function onProjectTypeChange(checkbox) {
-    simulationCoreMode = checkbox.checked ? "seawat" : "modflow-2005";
+    ProjectConfig.simulationCoreMode = checkbox.checked ? "seawat" : "modflow-2005";
+    submitProjectMetadataUpdate(ProjectConfig.projectId);
 }
 
 async function sendModflowModelAfterSelected(projectId) {

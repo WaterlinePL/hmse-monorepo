@@ -141,7 +141,6 @@ async function runSimulation(projectId) {
     await fetch(url, {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({'coreMode': simulationCoreMode}),
     }).then(response => {
         if (response.status === 200) {
             showSuccessToast(jQuery, "Simulation started");

@@ -4,6 +4,8 @@ from typing import Optional
 
 from strenum import StrEnum
 
+from simulations.projects.simulation_core_mode import SimulationCoreMode
+
 
 class SimulationStageStatus(StrEnum):
     PENDING = auto()
@@ -13,11 +15,6 @@ class SimulationStageStatus(StrEnum):
 
     def is_finished(self):
         return self == SimulationStageStatus.SUCCESS or self == SimulationStageStatus.ERROR
-
-
-class SimulationCoreMode(StrEnum):
-    MODFLOW_2005 = "modflow-2005"
-    SEAWAT = "seawat"
 
 
 class SimulationStageName(StrEnum):
