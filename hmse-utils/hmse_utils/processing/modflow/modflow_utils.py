@@ -192,8 +192,16 @@ def __validate_model(model_path: str) -> None:
     """
 
     nam_file_name = scan_for_modflow_file(model_path)
-    if not nam_file_name:
-        raise ModflowMissingFileError(description="Invalid Modflow model - .nam file not found!")
+    swn_file_name = scan_for_modflow_file(model_path, ext=".swn")
+    if not nam_file_name and not swn_file_name:
+        raise ModflowMissingFileError(description="Invalid Modflow model - .nam file not found!")   # Error doesn't show
+
+    if swn_file_name and not nam_file_name:
+        swn_file_path = os.path.join(model_path, swn_file_name)
+        nam_file = swn_file_name.replace('.swn', '.nam').replace('.SWN', '.nam')
+        rename_nam_file_path = os.path.join(model_path, nam_file)
+        os.rename(swn_file_path, rename_nam_file_path)
+        nam_file_name = rename_nam_file_path
 
     try:
         # load whole model and validate it
@@ -204,10 +212,10 @@ def __validate_model(model_path: str) -> None:
         if m.rch is None:
             raise ModflowMissingFileError(description="Invalid Modflow model - .rch file not found!")
         m.rch.check()
-    except IOError:
-        raise ModflowMissingFileError(description="Invalid Modflow model - validation detected missing files!")
-    except KeyError:
-        raise ModflowCommonError(description="Invalid Modflow model - validation detected an unspecified error!")
+    except (IOError, AttributeError) as e:
+        raise ModflowMissingFileError(description=f"Invalid Modflow model - validation detected missing files (needed BAS and DIS packages)! ({str(e)})")
+    except KeyError as e:
+        raise ModflowCommonError(description=f"Invalid Modflow model - validation detected an unspecified error! ({str(e)})")
 
 
 def __fix_modflow_project(modflow_base_dir: str):
