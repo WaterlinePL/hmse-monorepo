@@ -1,13 +1,14 @@
 import copy
 import logging
 import os
-from collections import deque, defaultdict
+import re
+from collections import deque
 from typing import List, Tuple, Optional
 from zipfile import ZipFile
+from pathlib import Path
 
 import flopy
 import numpy as np
-from flopy.discretization.modeltime import ModelTime
 from flopy.modflow import ModflowBas
 
 from hmse_utils.processing.local_fs_configuration import local_paths
@@ -194,14 +195,15 @@ def __validate_model(model_path: str) -> None:
     nam_file_name = scan_for_modflow_file(model_path)
     swn_file_name = scan_for_modflow_file(model_path, ext=".swn")
     if not nam_file_name and not swn_file_name:
-        raise ModflowMissingFileError(description="Invalid Modflow model - .nam file not found!")   # Error doesn't show
+        raise ModflowMissingFileError(description="Invalid Modflow model - .nam file not found!")  # Error doesn't show
 
     if swn_file_name and not nam_file_name:
         swn_file_path = os.path.join(model_path, swn_file_name)
         nam_file = swn_file_name.replace('.swn', '.nam').replace('.SWN', '.nam')
-        rename_nam_file_path = os.path.join(model_path, nam_file)
-        os.rename(swn_file_path, rename_nam_file_path)
-        nam_file_name = rename_nam_file_path
+        renamed_nam_file_path = os.path.join(model_path, nam_file)
+        os.rename(swn_file_path, renamed_nam_file_path)
+        __fix_seawat_nam_file(renamed_nam_file_path)
+        nam_file_name = renamed_nam_file_path
 
     try:
         # load whole model and validate it
@@ -213,9 +215,30 @@ def __validate_model(model_path: str) -> None:
             raise ModflowMissingFileError(description="Invalid Modflow model - .rch file not found!")
         m.rch.check()
     except (IOError, AttributeError) as e:
-        raise ModflowMissingFileError(description=f"Invalid Modflow model - validation detected missing files (needed BAS and DIS packages)! ({str(e)})")
+        raise ModflowMissingFileError(
+            description=f"Invalid Modflow model - validation detected missing files (needed BAS and DIS packages)! ({str(e)})")
     except KeyError as e:
-        raise ModflowCommonError(description=f"Invalid Modflow model - validation detected an unspecified error! ({str(e)})")
+        raise ModflowCommonError(
+            description=f"Invalid Modflow model - validation detected an unspecified error! ({str(e)})")
+
+
+# Dedicated for GMS
+def __fix_seawat_nam_file(swn_file_path: str):
+    with open(swn_file_path, 'r+', encoding='utf-8') as fp:
+        lines = fp.readlines()
+        for i in range(len(lines)):
+            line = lines[i]
+            quote_match = re.search(r'".+"', line)
+            if quote_match:
+                found_path = quote_match.group()
+                direct_file = os.path.basename(found_path)
+                if direct_file == found_path:
+                    direct_file = direct_file.split('\\')[-1]
+                replaced_line = re.sub(r'".+"', direct_file, line)
+                lines[i] = replaced_line
+        fp.seek(0)
+        fp.writelines(lines)
+        fp.truncate()
 
 
 def __fix_modflow_project(modflow_base_dir: str):
@@ -245,6 +268,7 @@ def find_head_file(modflow_dir: str):
     if not hed_file:
         hed_file = scan_for_modflow_file(modflow_dir, ext=".hds")
     return hed_file
+
 
 def convert_time_units_to_days(duration: float, dur_unit: str) -> int:
     ratio = __TIME_UNIT_CONVERSION.get(dur_unit, 0)
