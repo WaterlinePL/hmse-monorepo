@@ -13,6 +13,7 @@ from hmse_utils.processing.modflow import modflow_utils
 from simulations.projects.project_exceptions import ProjectInUse
 from simulations.projects.project_metadata import ProjectMetadata
 from server import endpoints, cookie_utils, path_checker, template, naming_utils
+from simulations.projects.simulation_core_mode import SimulationCoreMode
 
 projects = Blueprint('projects', __name__)
 
@@ -82,7 +83,15 @@ def project(project_id: str):
     elif request.method == 'PATCH':
         metadata = project_service.get(project_id)
         patch = request.json
-        metadata.project_name = patch['projectName']
+
+        new_project_name = patch.get('projectName')
+        if new_project_name:
+            metadata.project_name = new_project_name
+
+        new_simulation_core_mode = patch.get('simulationCoreMode')
+        if new_simulation_core_mode:
+            metadata.simulation_core_mode = SimulationCoreMode(new_simulation_core_mode)
+
         project_service.save_or_update_metadata(metadata)
         return flask.Response(status=HTTPStatus.OK)
     else:

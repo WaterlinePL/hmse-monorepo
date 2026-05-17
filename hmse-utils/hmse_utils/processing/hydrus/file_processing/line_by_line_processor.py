@@ -4,6 +4,7 @@ from typing import List, Tuple
 
 from hmse_utils.processing import julian_calendar_manager
 from hmse_utils.processing.hydrus.file_processing.text_file_processor import TextFileProcessor
+from hmse_utils.processing.hydrus.hydrus_number_formatter import NumFormat
 
 
 @dataclass
@@ -15,13 +16,18 @@ class LineByLineProcessor(TextFileProcessor):
 
     def _perform_truncating(self, data_content_line_prefix: str, total_record_count_line_prefix: str,
                             data_start_idx: int, data_count: int) -> Tuple[float, float]:
-        lines, data_start, total_data_records = self._preparse_lines(data_content_line_prefix,
-                                                                     total_record_count_line_prefix)
+        lines, data_start, total_data_records = self._preparse_lines(
+            data_content_line_prefix,
+            total_record_count_line_prefix,
+            data_count,
+        )
 
         return self._save_sliced_data(lines, data_start, total_data_records, data_start_idx, data_count)
 
     def _preparse_lines(self, data_content_line_prefix: str,
-                        total_record_count_line_prefix: str) -> Tuple[List[str], int, int]:
+                        total_record_count_line_prefix: str,
+                        data_count: int,
+                        ) -> Tuple[List[str], int, int]:
 
         lines = self.fp.readlines()
         total_data_records = 0
@@ -31,6 +37,12 @@ class LineByLineProcessor(TextFileProcessor):
             stripped = line.strip()
             if stripped.startswith(total_record_count_line_prefix):
                 total_data_records = int(lines[i + 1].strip().split()[0].strip())
+                lines[i + 1] = TextFileProcessor._substitute_in_line(
+                    lines[i + 1],
+                    data_count,
+                    col_idx=0,
+                    num_format=NumFormat.INTEGER,
+                )
             elif stripped.startswith(data_content_line_prefix):
                 data_start = i + 1
 

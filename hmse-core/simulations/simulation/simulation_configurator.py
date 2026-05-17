@@ -4,9 +4,9 @@ from typing import List
 from config import deployment_config
 from hmse_utils.processing.modflow.modflow_step import ModflowStepType
 from simulations.projects.project_metadata import ProjectMetadata
+from simulations.projects.simulation_core_mode import SimulationCoreMode
 from simulations.projects.simulation_mode import SimulationMode
 from simulations.simulation.simulation_chapter import SimulationChapter
-from simulations.simulation.simulation_enums import SimulationCoreMode
 
 logger = logging.getLogger(__name__)
 

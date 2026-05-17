@@ -11,7 +11,7 @@ const __config = {
     "editShapes": "/project/<project_id>/edit-shape",
     "simulation": "/simulation/<project_id>",
     "projectPing": "/project/<project_id>/ping",
-    "projectInUse": "/project/<project_id>/in-use",     // not displayedused yet
+    "projectInUse": "/project/<project_id>/in-use",     // not displayed/used yet
     "mapShapeRecharge": "/project/<project_id>/map-shape-to-hydrus",
     "mapWeatherFile": "/project/<project_id>/map-weather",
     "configuration": "/configuration",

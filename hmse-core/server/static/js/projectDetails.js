@@ -119,9 +119,10 @@ function cancelHydrusConfigEdit() {
 
 
 // PROJECT
-async function submitNewProjectName(projectId) {
+async function submitProjectMetadataUpdate(projectId) {
     const requestData = {
-        "projectName": document.getElementById("renameProjectField").value.trim()
+        "projectName": document.getElementById("renameProjectField").value.trim(),
+        "simulationCoreMode": ProjectConfig.simulationCoreMode,
     }
 
     const url = getEndpointForProjectId(Config.project, projectId);

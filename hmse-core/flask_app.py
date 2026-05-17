@@ -1,7 +1,7 @@
 import json
 import os.path
 import sys
-from http.client import HTTPException
+from werkzeug.exceptions import HTTPException
 
 from flask import Flask
 

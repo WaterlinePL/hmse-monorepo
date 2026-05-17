@@ -1,9 +1,9 @@
 from typing import List
 
 from simulations.projects.project_metadata import ProjectMetadata
+from simulations.projects.simulation_core_mode import SimulationCoreMode
 from simulations.simulation.simulation_chapter import SimulationChapter
-from simulations.simulation.simulation_enums import SimulationStageName, SimulationStageStatus, SimulationStage, \
-    SimulationCoreMode
+from simulations.simulation.simulation_enums import SimulationStageName, SimulationStageStatus, SimulationStage
 from simulations.simulation.tasks import hmse_task
 
 

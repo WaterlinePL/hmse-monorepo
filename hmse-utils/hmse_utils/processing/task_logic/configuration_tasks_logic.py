@@ -80,7 +80,7 @@ def create_hydrus_models_for_zones(project_id: str, shapes_to_hydrus: Dict[str, 
                                                                  used_hydrus_models=hydrus_to_shapes)
 
 
-def pre_configure_iteration(project_id: str, remove_prev_step_dir: bool = True, **kwargs):
+def pre_configure_iteration(project_id: str, remove_prev_step_dir: bool = False, **kwargs):
     feedback_loop_file_management.pre_configure_iteration(project_id, remove_prev_step_dir)
 
 

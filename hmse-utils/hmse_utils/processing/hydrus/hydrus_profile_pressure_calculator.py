@@ -58,10 +58,12 @@ def calculate_pressure_for_hydrus_model(hydrus_root_dir: str, water_depth_in_pro
         # check if the profile update should be terminated
         if qold1 * qbot < 0:
             # flux changes direction
+            print("flux changes direction")
             break
         qmax = max(abs(qold1), abs(qbot))
         if abs(qold1 - qbot) > (1e-12 + 0.1 * qmax):
             # flux value significantly different from the value in the saturated zone
+            print("flux value significantly different from the value in the saturated zone")
             break
 
         dz = abs(profile["x"].iloc[idx + 1] - profile["x"].iloc[idx])

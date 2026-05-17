@@ -115,3 +115,6 @@ def __fix_hydrus_project(hydrus_base_dir: str):
             fp.seek(0)
             fp.write(lf_separated_lines)
             fp.truncate()
+
+    with open(os.path.join(hydrus_base_dir, "LEVEL_01.DIR"), 'w') as fp:
+        fp.write(".\n")
