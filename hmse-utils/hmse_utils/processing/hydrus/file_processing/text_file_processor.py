@@ -6,7 +6,7 @@ from typing import TextIO
 
 from hmse_utils.processing import julian_calendar_manager
 from hmse_utils.processing.hydrus import hydrus_number_formatter
-from hmse_utils.processing.hydrus.hydrus_number_formatter import FloatFormat
+from hmse_utils.processing.hydrus.hydrus_number_formatter import NumFormat
 
 
 @dataclass
@@ -18,9 +18,9 @@ class TextFileProcessor(ABC):
 
     @staticmethod
     def _substitute_in_line(line: str, value: float, col_idx: int,
-                            float_format: FloatFormat = FloatFormat.THREE_DIGITS_AFTER_DOT) -> str:
+                            num_format: NumFormat = NumFormat.THREE_DIGITS_AFTER_DOT) -> str:
         cols = TextFileProcessor._split_into_columns(line)
-        formatted_new_val = hydrus_number_formatter.format_swapped_float(value, val_format=float_format)
+        formatted_new_val = hydrus_number_formatter.format_swapped_num(value, val_format=num_format)
         cols[col_idx] = formatted_new_val
         return '\t'.join(cols) + '\n'
 

@@ -6,7 +6,7 @@ from typing import Dict
 import pandas as pd
 
 from hmse_utils.processing.hydrus.file_processing.text_file_processor import TextFileProcessor
-from hmse_utils.processing.hydrus.hydrus_number_formatter import FloatFormat
+from hmse_utils.processing.hydrus.hydrus_number_formatter import NumFormat
 from hmse_utils.processing.unit_manager import LengthUnit
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class SelectorInProcessor(TextFileProcessor):
             if line.strip().endswith("MPL"):
                 line_with_node_information = lines[i + 1]
                 to_write = TextFileProcessor._substitute_in_line(line_with_node_information, 1, col_idx=7,
-                                                                 float_format=FloatFormat.INTEGER)
+                                                                 num_format=NumFormat.INTEGER)
                 write_idx = i + 1
             elif line.strip().startswith("tInit"):
                 line_with_step_data = lines[i + 1]
