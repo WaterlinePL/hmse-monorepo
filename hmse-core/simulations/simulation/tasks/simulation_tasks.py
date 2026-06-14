@@ -29,3 +29,11 @@ class SimulationTasks:
             project_metadata,
             **kwargs
         )
+
+    @staticmethod
+    @hmse_task(stage_name=SimulationStageName.MT3DMS_SIMULATION)
+    def mt3dms_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
+        deployment_config.get_deployment_function(SimulationStageName.MT3DMS_SIMULATION)(
+            project_metadata,
+            **kwargs
+        )

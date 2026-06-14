@@ -12,7 +12,8 @@ from hmse_utils.processing.typing_help import HydrusID
 from simulations.projects import project_dao, polygon_processor
 from simulations.projects.project_exceptions import ProjectSimulationNotFinishedError
 from simulations.projects.project_metadata import ProjectMetadata
-from simulations.projects.shape_utils import generate_random_html_color
+from simulations.projects.shape_metadata import ShapeMode, ShapeMetadata
+from simulations.projects.shape_utils import generate_random_html_color_solid, generate_random_html_color_transparent
 from simulations.projects.simulation_mode import SimulationMode
 from simulations.projects.typing_help import ProjectID, WeatherID, ShapeID
 
@@ -77,13 +78,14 @@ def set_modflow_model(project_id: ProjectID, modflow_model: FileStorage) -> Modf
         metadata.set_modflow_metadata(model_metadata)
 
         inactive_shape_id = "inactive_modflow_cells"
-        inactive_shape_color = "#999999"
+        inactive_shape_color = "rgba(154, 154, 154, 1.0)"
         project_dao.get().save_or_update_shape(project_id, inactive_shape_id, inactive_cells_shape)
-        metadata.add_shape_metadata(inactive_shape_id, inactive_shape_color)
+        metadata.add_shape_metadata(inactive_shape_id, inactive_shape_color, shape_mode=ShapeMode.INACTIVE)
 
         metadata.start_date = extra_data.start_date
         project_dao.get().save_or_update_metadata(metadata)
         project_dao.get().add_modflow_rch_shapes(project_id, extra_data.rch_shapes)
+        project_dao.get().add_mt3dms_ssm_shapes(project_id, extra_data.ssm_shapes)
         return model_metadata
 
 
@@ -96,6 +98,7 @@ def delete_modflow_model(project_id: ProjectID):
     project_dao.get().delete_rch_shapes(project_id)
     metadata.shapes = {}
     metadata.shapes_to_hydrus = {}
+    project_dao.get().delete_ssm_shapes(project_id)
 
     project_dao.get().delete_modflow_model(project_id, modflow_id)
     project_dao.get().save_or_update_metadata(metadata)
@@ -126,10 +129,19 @@ def get_all_shapes(project_id: ProjectID) -> Dict[ShapeID, List[List[int]]]:
 
 def add_rch_shapes(project_id: ProjectID):
     rch_shapes = project_dao.get().get_rch_shapes(project_id)
-    shape_ids = __save_new_shapes(project_id, rch_shapes)
+    shape_ids = __save_new_shapes(project_id, rch_shapes, shape_mode=ShapeMode.RECHARGE)
     return {
         "shapeIds": shape_ids,
         "shapeMasks": __transform_mask_to_polygon(rch_shapes)
+    }
+
+
+def add_ssm_shapes(project_id: ProjectID):
+    ssm_shapes = project_dao.get().get_ssm_shapes(project_id)
+    shape_ids = __save_new_shapes(project_id, ssm_shapes, shape_mode=ShapeMode.SOLUTE, transparent_colors=False)
+    return {
+        "shapeIds": shape_ids,
+        "shapeMasks": __transform_mask_to_polygon(ssm_shapes)
     }
 
 
@@ -140,7 +152,7 @@ def add_zb_shapes(project_id: ProjectID, zb_file: FileStorage):
         zb_shapes = zonebudget_shape_parser.read_zone_file(zb_path)
 
     zb_shapes = {f"zb_shape_{i + 1}": shape for i, shape in enumerate(zb_shapes)}
-    shape_ids = __save_new_shapes(project_id, zb_shapes)
+    shape_ids = __save_new_shapes(project_id, zb_shapes, shape_mode=ShapeMode.RECHARGE)
     return {
         "shapeIds": shape_ids,
         "shapeMasks": __transform_mask_to_polygon(zb_shapes)
@@ -148,7 +160,7 @@ def add_zb_shapes(project_id: ProjectID, zb_file: FileStorage):
 
 
 def save_or_update_shape(project_id: ProjectID, shape_id: ShapeID, color: str,
-                         new_shape_id: ShapeID) -> None:
+                         new_shape_id: ShapeID, shape_mode: ShapeMode) -> None:
     metadata = project_dao.get().read_metadata(project_id)
     if metadata.contains_shape(shape_id) and shape_id != new_shape_id:
         project_dao.get().delete_shape(project_id, shape_id)
@@ -160,10 +172,9 @@ def save_or_update_shape(project_id: ProjectID, shape_id: ShapeID, color: str,
             else:
                 metadata.map_shape_to_hydrus(new_shape_id, current_shape_mapping)
             metadata.remove_shape_mapping(shape_id)
-        metadata.remove_shape_metadata(shape_id)
 
-    metadata.add_shape_metadata(new_shape_id, color)
-    # project_dao.get().save_or_update_shape(project_id, new_shape_id, shape_mask)
+        metadata.remove_shape_metadata(shape_id)
+    metadata.add_shape_metadata(new_shape_id, color, shape_mode)
     project_dao.get().save_or_update_metadata(metadata)
 
 
@@ -227,10 +238,16 @@ def __transform_mask_to_polygon(shapes_to_mask: Dict[ShapeID, np.ndarray]) -> Di
     return res_shapes
 
 
-def __save_new_shapes(project_id, shape_data):
+def __save_new_shapes(project_id, shape_data, shape_mode: ShapeMode, transparent_colors: bool = False):
     for shape_id, mask in shape_data.items():
         project_dao.get().save_or_update_shape(project_id, shape_id, mask)
-    shape_ids = {shape_id: generate_random_html_color() for shape_id in shape_data.keys()}
+
+    color_func = generate_random_html_color_transparent if transparent_colors else generate_random_html_color_solid
+
+    shape_ids = {
+        shape_id: ShapeMetadata(color_func(), shape_mode)
+        for shape_id in shape_data.keys()
+    }
     metadata = project_dao.get().read_metadata(project_id)
     metadata.shapes.update(shape_ids)
     project_dao.get().save_or_update_metadata(metadata)

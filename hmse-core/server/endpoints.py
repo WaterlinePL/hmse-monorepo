@@ -20,6 +20,7 @@ PROJECT_MANAGE_MODFLOW = '/project/<project_id>/modflow'
 PROJECT_MANAGE_WEATHER_FILE = '/project/<project_id>/weather'
 EDIT_SHAPE = '/project/<project_id>/edit-shape'
 RCH_SHAPES = '/project/<project_id>/rch-shape'
+SSM_SHAPES = '/project/<project_id>/ssm-shapes'
 ZB_SHAPES = '/project/<project_id>/zb-shape'
 SIMULATION_MODE = '/project/<project_id>/simulation-mode'
 

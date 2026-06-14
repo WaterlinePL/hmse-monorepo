@@ -5,13 +5,13 @@ from typing import List
 
 from config import app_config
 from config.deployment_config import desktop, docker
-from simulations import path_formatter
 from hmse_utils.processing.data_passing_utils import \
     DataProcessingException
 from hmse_utils.processing.hydrus import hydrus_utils
 from hmse_utils.processing.local_fs_configuration import local_paths
 from hmse_utils.processing.modflow import modflow_utils
 from hmse_utils.processing.task_logic import configuration_tasks_logic, data_tasks_logic
+from simulations import path_formatter
 from simulations.projects.project_metadata import ProjectMetadata
 from simulations.projects.simulation_mode import SimulationMode
 from simulations.simulation.simulation_enums import SimulationStageName, SimulationCoreMode
@@ -61,7 +61,7 @@ def __initialize_new_iteration_files(project_metadata: ProjectMetadata, **kwargs
         project_id=project_metadata.project_id,
         modflow_id=project_metadata.modflow_metadata.modflow_id,
         spin_up=project_metadata.spin_up,
-        shapes_to_hydrus=project_metadata.shapes_to_hydrus
+        shapes_to_hydrus=project_metadata.shapes_to_hydrus,
     )
 
 
@@ -71,7 +71,7 @@ def __create_per_zone_hydrus_models(project_metadata: ProjectMetadata, **kwargs)
     logger.debug(f"Launching local task for stage: {kwargs['stage_name']}")
     configuration_tasks_logic.create_hydrus_models_for_zones(
         project_id=project_metadata.project_id,
-        shapes_to_hydrus=project_metadata.shapes_to_hydrus
+        shapes_to_hydrus=project_metadata.get_recharge_hydrus_shapes()
     )
 
 
@@ -101,7 +101,7 @@ def __weather_data_to_hydrus(project_metadata: ProjectMetadata, **kwargs) -> Non
             spin_up=project_metadata.spin_up,
             modflow_metadata=project_metadata.modflow_metadata,
             hydrus_to_weather=project_metadata.hydrus_to_weather,
-            shapes_to_hydrus=project_metadata.shapes_to_hydrus
+            shapes_to_hydrus=project_metadata.get_recharge_hydrus_shapes(),
         )
     except DataProcessingException as e:
         raise SimulationError(description=str(e))
@@ -114,8 +114,24 @@ def __hydrus_to_modflow(project_metadata: ProjectMetadata, **kwargs) -> None:
     try:
         data_tasks_logic.transfer_data_from_hydrus_to_modflow(
             project_id=project_metadata.project_id,
-            shapes_to_hydrus=project_metadata.shapes_to_hydrus,
+            shapes_to_hydrus=project_metadata.get_recharge_hydrus_shapes(),
             is_feedback_loop=project_metadata.simulation_mode == SimulationMode.WITH_FEEDBACK,
+            modflow_metadata=project_metadata.modflow_metadata,
+            spin_up=project_metadata.spin_up
+        )
+    except DataProcessingException as e:
+        raise SimulationError(description=str(e))
+
+
+@desktop(identification=SimulationStageName.HYDRUS_TO_MT3DMS_DATA_PASSING)
+@docker(identification=SimulationStageName.HYDRUS_TO_MT3DMS_DATA_PASSING)
+def __hydrus_to_mt3dms(project_metadata: ProjectMetadata, **kwargs) -> None:
+    logger.debug(f"Launching local task for stage: {kwargs['stage_name']}")
+    try:
+        data_tasks_logic.transfer_data_from_hydrus_to_mt3dms(
+            project_id=project_metadata.project_id,
+            shapes_to_sol_hydrus=project_metadata.get_solute_hydrus_shapes(),
+            # is_feedback_loop=project_metadata.simulation_mode == SimulationMode.WITH_FEEDBACK,
             modflow_metadata=project_metadata.modflow_metadata,
             spin_up=project_metadata.spin_up
         )
@@ -129,7 +145,7 @@ def __modflow_to_hydrus(project_metadata: ProjectMetadata, **kwargs) -> None:
     logger.debug(f"Launching local task for stage: {kwargs['stage_name']}")
     data_tasks_logic.transfer_data_from_modflow_to_hydrus(
         project_id=project_metadata.project_id,
-        shapes_to_hydrus=project_metadata.shapes_to_hydrus,
+        shapes_to_hydrus=project_metadata.get_recharge_hydrus_shapes(),
         modflow_metadata=project_metadata.modflow_metadata
     )
 
@@ -141,7 +157,7 @@ def __modflow_init_condition_transfer_steady_state(project_metadata: ProjectMeta
     SimulationTasks.modflow_simulation(project_metadata)
     data_tasks_logic.transfer_data_from_modflow_to_hydrus(
         project_id=project_metadata.project_id,
-        shapes_to_hydrus=project_metadata.shapes_to_hydrus,
+        shapes_to_hydrus=project_metadata.get_recharge_hydrus_shapes(),
         modflow_metadata=project_metadata.modflow_metadata
     )
 
@@ -152,7 +168,7 @@ def __modflow_init_condition_transfer_transient(project_metadata: ProjectMetadat
     logger.debug(f"Launching local task for stage: {kwargs['stage_name']}")
     data_tasks_logic.transfer_data_from_modflow_to_hydrus_init_transient(
         project_id=project_metadata.project_id,
-        shapes_to_hydrus=project_metadata.shapes_to_hydrus,
+        shapes_to_hydrus=project_metadata.get_recharge_hydrus_shapes(),
         modflow_metadata=project_metadata.modflow_metadata
     )
 
@@ -162,10 +178,10 @@ def __modflow_init_condition_transfer_transient(project_metadata: ProjectMetadat
 def __hydrus_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
     logger.debug(f"Launching local task for stage: {kwargs['stage_name']}")
     simulations = []
-    if project_metadata.simulation_mode == SimulationMode.SIMPLE_COUPLING:
-        hydrus_to_launch = hydrus_utils.get_used_hydrus_models(project_metadata.shapes_to_hydrus)
+    if project_metadata.simulation_mode.is_simple():
+        hydrus_to_launch = hydrus_utils.get_used_hydrus_models(project_metadata.get_recharge_hydrus_shapes())
     else:
-        hydrus_to_launch = hydrus_utils.get_compound_hydrus_ids_for_feedback_loop(project_metadata.shapes_to_hydrus)
+        hydrus_to_launch = hydrus_utils.get_compound_hydrus_ids_for_feedback_loop(project_metadata.get_recharge_hydrus_shapes())
         hydrus_to_launch = [compound_hydrus_id for _, compound_hydrus_id in hydrus_to_launch]
 
     current_dir = os.getcwd()
@@ -194,6 +210,7 @@ def __hydrus_simulation_warmup(project_metadata: ProjectMetadata, **kwargs) -> N
     SimulationTasks.hydrus_simulation(project_metadata)
 
 
+# TODO: split those into 2 modes
 @desktop(identification=SimulationStageName.CORE_SIMULATION)
 def __core_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
     logger.debug(f"Launching local task for stage: {kwargs['stage_name']}")
@@ -211,6 +228,25 @@ def __core_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
     os.chdir(modflow_path)
     proc = __run_local_program(
         exec_path=core_exec_path,
+        args=[nam_file]
+    )
+    os.chdir(current_dir)
+    proc.communicate(input="\n")  # Press enter to close program (blocking)
+
+
+@desktop(identification=SimulationStageName.MT3DMS_SIMULATION)
+def __mt3dms_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
+    logger.debug(f"Launching local task for stage: {kwargs['stage_name']}")  # TODO: logging is repeated
+    modflow_id = project_metadata.modflow_metadata.modflow_id
+    modflow_path = local_paths.get_modflow_model_path(project_metadata.project_id, modflow_id, simulation_mode=True)
+
+    current_dir = os.getcwd()
+    mt3dms_exec_path = path_formatter.convert_backslashes_to_slashes(app_config.get_config().mt3dms_program_path)
+    nam_file = modflow_utils.scan_for_modflow_file(modflow_path, ext=".mt_nam") # TODO: is it a standard?
+
+    os.chdir(modflow_path)
+    proc = __run_local_program(
+        exec_path=mt3dms_exec_path,
         args=[nam_file]
     )
     os.chdir(current_dir)

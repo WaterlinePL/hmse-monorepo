@@ -25,7 +25,7 @@ def configure_simulation(project_metadata: ProjectMetadata, mode: SimulationCore
 
 def __chapters_from_metadata(project_metadata: ProjectMetadata) -> List[SimulationChapter]:
     if project_metadata.simulation_mode == SimulationMode.SIMPLE_COUPLING:
-        chapters = [SimulationChapter.SIMPLE_COUPLING]
+        chapters = [SimulationChapter.SIMPLE_COUPLING_HYDRUS_MODFLOW]
     elif project_metadata.simulation_mode == SimulationMode.WITH_FEEDBACK:
         modflow_steps = project_metadata.modflow_metadata.steps_info
         starts_steady = modflow_steps[0].type == ModflowStepType.STEADY_STATE
@@ -33,6 +33,11 @@ def __chapters_from_metadata(project_metadata: ProjectMetadata) -> List[Simulati
                     if starts_steady else SimulationChapter.FEEDBACK_WARMUP_TRANSIENT]
         chapters += [SimulationChapter.FEEDBACK_ITERATION for _ in modflow_steps[1:]]
         chapters.append(SimulationChapter.FEEDBACK_SIMULATION_FINALIZATION)
+    elif project_metadata.simulation_mode == SimulationMode.SIMPLE_COUPLING_MT3DMS:
+        chapters = [
+            SimulationChapter.SIMPLE_COUPLING_HYDRUS_MODFLOW,
+            SimulationChapter.SIMPLE_COUPLING_HYDRUS_MT3DMS,
+        ]
     else:
         raise KeyError("Unknown simulation mode!")
 

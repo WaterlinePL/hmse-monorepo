@@ -117,14 +117,41 @@ class ProjectDaoLocal:
 
     def get_rch_shapes(self, project_id: ProjectID):
         logger.debug(f"Retrieving RCH shapes for project: {project_id}")
+
+        rch_dir = local_paths.get_rch_shapes_dir(project_id)
+        assert os.path.exists(rch_dir), "RCH shapes unavailable!"
+
+        rch_files = os.listdir(rch_dir)
+        assert len(rch_files) > 0, "No RCH shapes available in the Modflow model!"
+
         return {shape_id[:-4]: np.load(local_paths.get_rch_shape_filepath(project_id, shape_id[:-4]))
-                for shape_id in os.listdir(local_paths.get_rch_shapes_dir(project_id))}
+                for shape_id in rch_files}
+
+    def get_ssm_shapes(self, project_id: ProjectID):
+        logger.debug(f"Retrieving SSM shapes for project: {project_id}")
+
+        ssm_dir = local_paths.get_ssm_shapes_dir(project_id)
+        assert os.path.exists(ssm_dir), "SSM solute shapes were not generated - no SSM package available!"
+
+        ssm_files = os.listdir(ssm_dir)
+        assert len(ssm_files) > 0, "No SSM shapes available in the MT3DMS model!"
+
+        return {shape_id[:-4]: np.load(local_paths.get_ssm_shape_filepath(project_id, shape_id[:-4]))
+                for shape_id in os.listdir(local_paths.get_ssm_shapes_dir(project_id))}
 
     def delete_rch_shapes(self, project_id: ProjectID):
         logger.debug(f"Deleting all RCH shapes in project: {project_id}")
         rch_shapes_path = local_paths.get_rch_shapes_dir(project_id)
         for rch_shape_id in os.listdir(rch_shapes_path):
             os.remove(os.path.join(rch_shapes_path, rch_shape_id))
+
+    def delete_ssm_shapes(self, project_id: ProjectID):
+        logger.debug(f"Deleting all SSM shapes in project: {project_id}")
+        ssm_shapes_path = local_paths.get_ssm_shapes_dir(project_id)
+        if os.path.exists(ssm_shapes_path):
+            for ssm_shape_id in os.listdir(ssm_shapes_path):
+                ssm_shape_file = os.path.join(ssm_shapes_path, ssm_shape_id)
+                os.remove(ssm_shape_file)
 
     def get_shape(self, project_id: ProjectID, shape_id: ShapeID) -> np.ndarray:
         logger.debug(f"Reading shape {shape_id} in project: {project_id}")
@@ -140,6 +167,16 @@ class ProjectDaoLocal:
         for i, mask in enumerate(rch_shapes):
             shape_id = f"rch_shape_{i + 1}"
             np.save(local_paths.get_rch_shape_filepath(project_id, shape_id), mask)
+
+    def add_mt3dms_ssm_shapes(self, project_id: ProjectID, ssm_shapes: List[np.ndarray]):
+        logger.debug(f"Generating SSM shapes (MT3DMS) for project: {project_id}")
+        if not ssm_shapes:
+            return
+
+        os.makedirs(local_paths.get_ssm_shapes_dir(project_id), exist_ok=True)
+        for i, mask in enumerate(ssm_shapes):
+            shape_id = f"ssm_shape_{i + 1}"
+            np.save(local_paths.get_ssm_shape_filepath(project_id, shape_id), mask)
 
     def get_project_root(self, project_id: ProjectID) -> str:
         # Not needed

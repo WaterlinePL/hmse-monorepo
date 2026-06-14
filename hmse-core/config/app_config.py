@@ -44,6 +44,7 @@ class AppConfig:
     modflow_program_path: Optional[str] = None
     seawat_program_path: Optional[str] = None
     hydrus_program_path: Optional[str] = None
+    mt3dms_program_path: Optional[str] = None
 
     # docker specific config
     docker_volume_overwrite: Optional[str] = None  # Used only for HMSE runner script

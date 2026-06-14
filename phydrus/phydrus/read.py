@@ -211,7 +211,7 @@ def _read_file(path, start, end="end", usecols=None, idx_col=None,
         file.seek(0)  # Go back to start of file
 
         # Read data into a Pandas DataFrame
-        data = read_csv(file, skiprows=s, nrows=e - s - 2, usecols=usecols,
+        data = read_csv(file, skiprows=s, nrows=e - s - 1, usecols=usecols,
                         index_col=idx_col, skipinitialspace=True,
                         engine='python',
                         delim_whitespace=True, on_bad_lines=lambda x: x)

@@ -9,6 +9,7 @@ StrEnum==0.4.8
 Werkzeug==2.2.0
 zipp==3.8.1
 docker>=5.0.3
+dataclasses-json==0.6.7
 opencv-python
 hmse_utils==1.0.0
 minio==7.1.12

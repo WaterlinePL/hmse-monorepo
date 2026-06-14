@@ -3,10 +3,13 @@ import datetime
 from dataclasses import dataclass, field
 from typing import Optional, Set, Dict, Union
 
+from dataclasses_json import dataclass_json
+
 from hmse_utils.processing.modflow.modflow_metadata import ModflowMetadata
 from hmse_utils.processing.typing_help import HydrusID, ModflowID
 from simulations.projects.project_exceptions import UnknownShape, UnknownHydrusModel, DuplicateHydrusModel, \
     DuplicateWeatherFile, UnknownWeatherFile
+from simulations.projects.shape_metadata import ShapeMetadata, ShapeMode
 from simulations.projects.simulation_core_mode import SimulationCoreMode
 from simulations.projects.simulation_mode import SimulationMode
 from simulations.projects.typing_help import WeatherID, ShapeID, ProjectID, ShapeColor
@@ -14,7 +17,7 @@ from simulations.projects.typing_help import WeatherID, ShapeID, ProjectID, Shap
 
 # Is represented as .json file in store, accessed via dao
 
-
+@dataclass_json
 @dataclass
 class ProjectMetadata:
     project_id: ProjectID
@@ -29,7 +32,7 @@ class ProjectMetadata:
     modflow_metadata: Optional[ModflowMetadata] = None
     hydrus_models: Set[HydrusID] = field(default_factory=set)  # list of names of folders containing the hydrus models
     weather_files: Set[WeatherID] = field(default_factory=set)
-    shapes: Dict[ShapeID, ShapeColor] = field(default_factory=dict)
+    shapes: Dict[ShapeID, ShapeMetadata] = field(default_factory=dict)
 
     hydrus_durations: Dict[HydrusID, int] = field(default_factory=dict)
     weather_files_durations: Dict[WeatherID, int] = field(default_factory=dict)
@@ -43,8 +46,14 @@ class ProjectMetadata:
     def __post_init__(self):
         self.hydrus_models = set(self.hydrus_models)
         self.weather_files = set(self.weather_files)
+        if not isinstance(self.simulation_mode, SimulationMode):
+            self.simulation_mode = SimulationMode(self.simulation_mode)
         if isinstance(self.modflow_metadata, dict):
             self.modflow_metadata = ModflowMetadata(**self.modflow_metadata)
+
+        for shape_id, shape_metadata in self.shapes.items():
+            if isinstance(shape_metadata, dict):
+                self.shapes[shape_id] = ShapeMetadata(**shape_metadata)
 
     def calculate_end_date(self):
         if self.start_date is None or not self.modflow_metadata:
@@ -88,8 +97,16 @@ class ProjectMetadata:
         except KeyError:
             raise UnknownWeatherFile(description=f"Cannot delete weather file {weather_file_id} - no such file")
 
-    def add_shape_metadata(self, shape_id: ShapeID, shape_color: ShapeColor):
-        self.shapes[shape_id] = shape_color
+    def add_shape_metadata(self, shape_id: ShapeID, shape_color: ShapeColor, shape_mode: ShapeMode = ShapeMode.RECHARGE):
+        self.shapes[shape_id] = ShapeMetadata(color=shape_color, shape_mode=shape_mode)
+
+    def update_shape_color(self, shape_id: ShapeID, shape_color: ShapeColor):
+        assert shape_id in self.shapes, f"Unknown shape for color change: {shape_id}"
+        self.shapes[shape_id].color = shape_color
+
+    def update_shape_mode(self, shape_id: ShapeID, shape_mode: ShapeMode):
+        assert shape_id in self.shapes, f"Unknown shape for shape mode change: {shape_id}"
+        self.shapes[shape_id].shape_mode = shape_mode
 
     def remove_shape_metadata(self, shape_id: ShapeID):
         try:
@@ -145,6 +162,30 @@ class ProjectMetadata:
 
     def contains_shape(self, shape_id: ShapeID) -> bool:
         return shape_id in self.shapes
+
+    def get_recharge_hydrus_shapes(self) -> dict[ShapeID, HydrusID]:
+        rch_shape_ids = set(
+            shape_id
+            for shape_id, shape_metadata in self.shapes.items()
+            if shape_metadata.shape_mode == ShapeMode.RECHARGE
+        )
+        return {
+            shape_id: hydrus_id
+            for shape_id, hydrus_id in self.shapes_to_hydrus.items()
+            if shape_id in rch_shape_ids
+        }
+
+    def get_solute_hydrus_shapes(self) -> dict[ShapeID, HydrusID]:
+        solute_shape_ids = set(
+            shape_id
+            for shape_id, shape_metadata in self.shapes.items()
+            if shape_metadata.shape_mode == ShapeMode.SOLUTE
+        )
+        return {
+            shape_id: hydrus_id
+            for shape_id, hydrus_id in self.shapes_to_hydrus.items()
+            if shape_id in solute_shape_ids
+        }
 
     def to_json_response(self):
         self.hydrus_models = list(self.hydrus_models)

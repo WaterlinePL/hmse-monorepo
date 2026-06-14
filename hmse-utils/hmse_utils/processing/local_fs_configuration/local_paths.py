@@ -49,6 +49,10 @@ def get_shapes_dir(project_id: str, simulation_mode: bool = False) -> str:
 def get_rch_shapes_dir(project_id: str, simulation_mode: bool = False) -> str:
     return os.path.join(get_root_dir(project_id, simulation_mode), "rch_shapes")
 
+def get_ssm_shapes_dir(project_id: str, simulation_mode: bool = False) -> str:
+    return os.path.join(get_root_dir(project_id, simulation_mode), "ssm_shapes")
+
+
 
 def get_modflow_model_path(project_id: str, modflow_id: str,
                            simulation_mode: bool = False, simulation_ref: bool = False) -> str:
@@ -77,6 +81,10 @@ def get_shape_path(project_id: str, shape_id: str, simulation_mode: bool = False
 
 def get_rch_shape_filepath(project_id: str, shape_id: str, simulation_mode: bool = False) -> str:
     return os.path.join(get_rch_shapes_dir(project_id, simulation_mode), f"{shape_id}.npy")
+
+
+def get_ssm_shape_filepath(project_id: str, shape_id: str, simulation_mode: bool = False) -> str:
+    return os.path.join(get_ssm_shapes_dir(project_id, simulation_mode), f"{shape_id}.npy")
 
 
 def get_output_json_path(project_id: str) -> str:

@@ -5,7 +5,6 @@ import re
 from collections import deque
 from typing import List, Tuple, Optional
 from zipfile import ZipFile
-from pathlib import Path
 
 import flopy
 import numpy as np
@@ -68,9 +67,11 @@ def extract_and_fix_metadata(modflow_archive, tmp_dir: str) -> Tuple[
                                      grid_unit=LengthUnit.map_from_alias(model.modelgrid.units),
                                      steps_info=model_steps)
     rch_shape_data, inactive_cells_data = get_shapes_from_rch(model_path=tmp_dir, model_shape=model_shape)
+    ssm_shape_data = get_shapes_from_ssm(model_path=tmp_dir, model_shape=model_shape)
     extra_data = ModflowExtraData(
         **extract_extra_from_model(model),
-        rch_shapes=rch_shape_data
+        rch_shapes=rch_shape_data,
+        ssm_shapes=ssm_shape_data,
     )
     return model_metadata, extra_data, inactive_cells_data
 
@@ -97,6 +98,34 @@ def scale_cells_size(row_cells: List[float],
     return list(row_cells), list(col_cells), int(total_width), int(total_height)
 
 
+def get_shapes_from_ssm(model_path: str, model_shape: Tuple[int, int]) -> List[np.ndarray]:
+    logger.debug(f"Extracting SSM shapes for MT3DMS under path: {model_path}")
+    mf_nam_file_name = scan_for_modflow_file(model_path)
+    mt3dms_nam_file_name = scan_for_modflow_file(model_path, ext=".mt_nam")
+    if not mt3dms_nam_file_name:
+        logger.debug(f"SSM file not found, solute shapes not generated")
+        return []
+
+    modflow_model = flopy.modflow.Modflow.load(mf_nam_file_name,
+                                               model_ws=model_path,
+                                               load_only=["rch", "bas6"],
+                                               )
+
+    mt3dms_model = flopy.mt3d.Mt3dms.load(
+        mt3dms_nam_file_name,
+        modflowmodel=modflow_model,
+        model_ws=model_path,
+        load_only=["ssm"],
+    )
+
+    ssm_package = mt3dms_model.get_package("ssm")
+    stress_period = 0
+    layer = 0
+    crch_array = ssm_package.crch[0].array[stress_period][layer]
+    crch_solute_masks = dfs_shapes(model_shape, crch_array, ignore_zeros=True)
+    return crch_solute_masks
+
+
 def get_shapes_from_rch(model_path: str, model_shape: Tuple[int, int]) -> Tuple[List[np.ndarray], np.ndarray]:
     """
     Defines shapes masks for uploaded Modflow model based on recharge
@@ -106,7 +135,7 @@ def get_shapes_from_rch(model_path: str, model_shape: Tuple[int, int]) -> Tuple[
     @return: List of shapes read from Modflow project
     """
 
-    logger.debug(f"Extracting RCH shapes for modflow mode under path: {model_path}")
+    logger.debug(f"Extracting RCH shapes for Modflow model under path: {model_path}")
     nam_file_name = scan_for_modflow_file(model_path)
     modflow_model = flopy.modflow.Modflow.load(nam_file_name,
                                                model_ws=model_path,
@@ -115,25 +144,32 @@ def get_shapes_from_rch(model_path: str, model_shape: Tuple[int, int]) -> Tuple[
 
     stress_period = 0
     layer = 0
-
-    recharge_masks = []
-    is_checked_array = np.full(model_shape, False)
     recharge_array = modflow_model.rch.rech.array[stress_period][layer]
+    recharge_masks = dfs_shapes(model_shape, recharge_array, ignore_zeros=True)
+
+    ibound = next(pkg for pkg in modflow_model.packagelist if isinstance(pkg, ModflowBas)).ibound[0].array
+    inactive_cells = np.where(ibound == 0, 1, 0)
+    return recharge_masks, inactive_cells
+
+
+def dfs_shapes(model_shape: tuple[int, int], input_array, ignore_zeros: bool = False) -> list[np.ndarray]:
+    shape_masks = []
+    is_checked_array = np.full(model_shape, False)
     modflow_rows, modflow_cols = model_shape
 
     for row in range(modflow_rows):
         for col in range(modflow_cols):
             if not is_checked_array[row][col]:
-                recharge_masks.append(np.zeros(model_shape))
-                __fill_mask_iterative(mask=recharge_masks[-1], recharge_array=recharge_array,
+                if ignore_zeros and input_array[row][col] == 0.0:
+                    continue
+
+                shape_masks.append(np.zeros(model_shape))
+                __fill_mask_iterative(mask=shape_masks[-1], recharge_array=input_array,
                                       is_checked_array=is_checked_array,
                                       project_shape=model_shape,
                                       row=row, col=col,
-                                      value=recharge_array[row][col])
-
-    ibound = next(pkg for pkg in modflow_model.packagelist if isinstance(pkg, ModflowBas)).ibound[0].array
-    inactive_cells = np.where(ibound == 0, 1, 0)
-    return recharge_masks, inactive_cells
+                                      value=input_array[row][col])
+    return shape_masks
 
 
 def __fill_mask_iterative(mask: np.ndarray,
@@ -220,6 +256,43 @@ def __validate_model(model_path: str) -> None:
     except KeyError as e:
         raise ModflowCommonError(
             description=f"Invalid Modflow model - validation detected an unspecified error! ({str(e)})")
+
+    mt3dms_nam_file = scan_for_modflow_file(model_path, ext=".mt_nam")
+    if mt3dms_nam_file:
+        mt3dms_model = flopy.mt3d.Mt3dms.load(
+            mt3dms_nam_file,
+            model_ws=model_path,
+            modflowmodel=m,
+            forgive=True,
+            load_only=["ssm"],
+        )
+        ssm_package = mt3dms_model.get_package("ssm")
+        if not ssm_package:
+            ssm_filename = scan_for_modflow_file(model_path, ext=".ssm")
+            ssm_file = os.path.join(model_path, ssm_filename)
+            __fix_mt3dms_ssm_file(ssm_file)
+
+
+def __fix_mt3dms_ssm_file(ssm_file: str):
+    with open(ssm_file, 'r+', encoding='utf-8') as fp:
+        lines = fp.readlines()
+        potential_flags_lines_idx = 0
+        flags_found = False
+        for i in range(len(lines)):
+            line = lines[i]
+            if line.strip().startswith("#"):
+                potential_flags_lines_idx += 1
+
+            flags_search = re.search(r'\s*([TF]\s){3,}\s*', line)
+            if flags_search:
+                flags_found = True
+
+        fp.seek(0)
+        if not flags_found:
+            predefined_default_flopy_flags = " F F T F F F F F F F F F F F F F\n"
+            lines.insert(potential_flags_lines_idx, predefined_default_flopy_flags)
+            fp.writelines(lines)
+            fp.truncate()
 
 
 # Dedicated for GMS
