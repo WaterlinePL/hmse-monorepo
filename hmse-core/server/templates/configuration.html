@@ -23,6 +23,9 @@
                     <label for="seawatFile">Provide path to SEAWAT executable file: </label>
                     <input type="text" class="form-control" id="seawatFile"
                            placeholder="e.g. C:\Program Files (x86)\seawat\swt_v4_00_05\swt_v4.exe">
+                    <label for="mt3dmsFile">Provide path to MT3DMS executable file: </label>
+                    <input type="text" class="form-control" id="mt3dmsFile"
+                           placeholder="e.g. C:\Program Files (x86)\mt3dms\mt3dms5b.exe">
                     <label for="hydrusFile">Provide path to HYDRUS-1D executable file: </label>
                     <input type="text" class="form-control" id="hydrusFile"
                            placeholder="e.g. C:\Program Files (x86)\PC-Progress\Hydrus-1D 4.xx\H1D_CALC.exe">
@@ -47,6 +50,12 @@
                                 <span class="slice-column left">SEAWAT</span>
                                 <span id="seawatCurrentConfig" class="slice-column right">
                                     {{ app_config.seawat_program_path }}
+                                </span>
+                            </li>
+                            <li class="list-group-item ">
+                                <span class="slice-column left">MT3DMS</span>
+                                <span id="mt3dmsCurrentConfig" class="slice-column right">
+                                    {{ app_config.mt3dms_program_path }}
                                 </span>
                             </li>
                             <li class="list-group-item">

@@ -1,5 +1,5 @@
-async function requestRechargeShapes(projectId) {
-    const url = getEndpointForProjectId(Config.rchShapes, projectId);
+async function requestSoluteShapes(projectId) {
+    const url = getEndpointForProjectId(Config.ssmShapes, projectId);
     await fetch(url, {
         method: "PUT"
     }).then(response => {
@@ -10,7 +10,7 @@ async function requestRechargeShapes(projectId) {
                 }
             });
 
-            showSuccessToast(jQuery, "Successfully added RCH shapes from Modflow model");
+            showSuccessToast(jQuery, "Successfully added SSM shapes from MT3DMS model");
         } else {
             response.json().then(data => {
                 showErrorToast(jQuery, `Error: ${data.description}`);

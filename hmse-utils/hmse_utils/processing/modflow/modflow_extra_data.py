@@ -7,6 +7,7 @@ import numpy as np
 @dataclass
 class ModflowExtraData:
     rch_shapes: List[np.ndarray]
+    ssm_shapes: List[np.ndarray]
     start_date: Optional[str]
 
 

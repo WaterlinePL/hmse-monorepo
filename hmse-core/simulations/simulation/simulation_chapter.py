@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SimulationChapter(StrEnum):
-    SIMPLE_COUPLING = auto()
+    SIMPLE_COUPLING_HYDRUS_MODFLOW = auto()
+    SIMPLE_COUPLING_HYDRUS_MT3DMS = auto()
     FEEDBACK_WARMUP_STEADY_STATE = auto()
     FEEDBACK_WARMUP_TRANSIENT = auto()
     FEEDBACK_ITERATION = auto()
@@ -75,6 +76,13 @@ __SIMPLE_COUPLING_TASKS = [
     ConfigurationTasks.cleanup
 ]
 
+__SIMPLE_COUPLING_MT3DMS_TASKS = [
+    # ConfigurationTasks.initialization,  # Maybe
+    DataTasks.hydrus_to_mt3dms,
+    SimulationTasks.mt3dms_simulation,
+    ConfigurationTasks.cleanup  # Maybe
+]
+
 __FEEDBACK_WARMUP_STEADY_STATE_TASKS = [
     ConfigurationTasks.initialization,
     DataTasks.weather_data_to_hydrus,
@@ -111,7 +119,8 @@ __FEEDBACK_SIMULATION_FINALIZATION = [
 ]
 
 CHAPTER_TO_TASK_MAPPING = {
-    SimulationChapter.SIMPLE_COUPLING: __SIMPLE_COUPLING_TASKS,
+    SimulationChapter.SIMPLE_COUPLING_HYDRUS_MODFLOW: __SIMPLE_COUPLING_TASKS,
+    SimulationChapter.SIMPLE_COUPLING_HYDRUS_MT3DMS: __SIMPLE_COUPLING_MT3DMS_TASKS,
     SimulationChapter.FEEDBACK_WARMUP_STEADY_STATE: __FEEDBACK_WARMUP_STEADY_STATE_TASKS,
     SimulationChapter.FEEDBACK_WARMUP_TRANSIENT: __FEEDBACK_WARMUP_TRANSIENT_TASKS,
     SimulationChapter.FEEDBACK_ITERATION: __FEEDBACK_ITERATION_TASKS,

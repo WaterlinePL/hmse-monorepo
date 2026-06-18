@@ -19,8 +19,8 @@ async function sendZbZonesAfterSelected(projectId) {
     }).then(response => {
         if (response.status === 200) {
             response.json().then(data => {
-                for (const [shapeId, color] of Object.entries(data["shapeIds"])) {
-                    addNewShape(projectId, shapeId, color, data["shapeMasks"][shapeId]);
+                for (const [shapeId, shapeMetadata] of Object.entries(data["shapeIds"])) {
+                    addNewShape(projectId, shapeId, shapeMetadata, data["shapeMasks"][shapeId]);
                 }
             });
             showSuccessToast(jQuery, "Successfully added ZoneBudget shapes for Modflow model");

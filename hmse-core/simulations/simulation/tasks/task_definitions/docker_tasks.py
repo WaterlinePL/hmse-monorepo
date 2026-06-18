@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 def __hydrus_simulation(project_metadata: ProjectMetadata, **kwargs) -> None:
     logger.debug(f"Launching docker task for stage: {kwargs['stage_name']}")
     simulations = []
-    if project_metadata.simulation_mode == SimulationMode.SIMPLE_COUPLING:
+    if project_metadata.simulation_mode.is_simple():
         hydrus_to_launch = hydrus_utils.get_used_hydrus_models(project_metadata.shapes_to_hydrus)
     else:
         hydrus_to_launch = hydrus_utils.get_compound_hydrus_ids_for_feedback_loop(project_metadata.shapes_to_hydrus)

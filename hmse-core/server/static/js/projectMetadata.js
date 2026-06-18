@@ -26,11 +26,11 @@ function removeShape(shapeId) {
     redrawGrid();
 }
 
-function addNewShape(projectId, shapeId, color, polygonArr) {
-    ProjectConfig.shapes[shapeId] = color;
-    addNewListEntry(jQuery, projectId, false, color, shapeId);
+function addNewShape(projectId, shapeId, shapeMetadata, polygonArr) {
+    ProjectConfig.shapes[shapeId] = shapeMetadata;
+    addNewListEntry(jQuery, projectId, false, shapeId, shapeMetadata);
     addShapePolygon(shapeId, polygonArr);
-    redrawShape(shapeId, color);
+    redrawShape(shapeId, shapeMetadata.color);
 }
 
 function unselectHydrusModelForAllShapes(hydrusIdToDelete) {

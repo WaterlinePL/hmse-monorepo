@@ -35,11 +35,13 @@ function drawShape(shapeArr, color, lineWidth) {
     }
     context.closePath();
 
+    // context.globalAlpha = color.alpha;
     context.lineWidth = lineWidth;
     context.fillStyle = color;
     context.fill();
     context.strokeStyle = color;
     context.stroke();
+    // context.globalAlpha = 1.0;
 }
 
 function redrawShape(shapeId, color, lineWidth = 1) {
@@ -49,11 +51,10 @@ function redrawShape(shapeId, color, lineWidth = 1) {
 
 function redrawGrid() {
     prepareCanvas();
-    redrawShape(inactiveShapeId, ProjectConfig.shapes[inactiveShapeId]);
-    console.log(ProjectConfig.shapes);
-    for (const [shapeId, color] of Object.entries(ProjectConfig.shapes)) {
+    redrawShape(inactiveShapeId, ProjectConfig.shapes[inactiveShapeId].color);
+    for (const [shapeId, shapeMetadata] of Object.entries(ProjectConfig.shapes)) {
         if (shapeId !== inactiveShapeId) {
-            redrawShape(shapeId, color);
+            redrawShape(shapeId, shapeMetadata.color);
         }
     }
 }

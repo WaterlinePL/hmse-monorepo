@@ -21,6 +21,7 @@
 <script src="{{ endpoint_prefix }}/static/js/projectManageWeatherFiles.js"></script>
 <script src="{{ endpoint_prefix }}/static/js/defineShapes.js"></script>
 <script src="{{ endpoint_prefix }}/static/js/rchShapes.js"></script>
+<script src="{{ endpoint_prefix }}/static/js/ssmShapes.js"></script>
 <script src="{{ endpoint_prefix }}/static/js/simulation.js"></script>
 <script src="{{ endpoint_prefix }}/static/js/mappings.js"></script>
 <script src="{{ endpoint_prefix }}/static/js/shapes.js"></script>
@@ -304,7 +305,7 @@
                             <h3 style="text-align: center">Shapes</h3>
                         </div>
                         <ul class="list-group list-group-flush" id="shapeList">
-                            {% for shape_id, color in metadata.shapes.items() %}
+                            {% for shape_id, shape_metadata in metadata.shapes.items() %}
                             <li class="list-group-item" id="shape{{ shape_id }}" {% if shape_id == 'inactive_modflow_cells' %} disabled {% endif %}>
                                 <div class="slice-column left">
                                     <div class="slice-column left" id="shapeName{{ shape_id }}">{{ shape_id if shape_id != 'inactive_modflow_cells' else 'Inactive cells' }}</div>
@@ -319,12 +320,20 @@
                                                 </span>
                                             </span>
                                         </div>
+                                        {% if shape_id != 'inactive_modflow_cells' %}
+                                        <div class="right" style="margin-right: 30px">
+                                            <label class="switch-shape-mode">
+                                                <input id="shapeModeSwitch{{ shape_id }}" type="checkbox" {% if shape_metadata.shape_mode|string == 'SOLUTE' %} checked {% endif %} onclick="onShapeModeChange('{{ metadata.project_id }}', '{{ shape_id }}', this);">
+                                                <span class="slider-shape-mode round-shape-mode"></span>
+                                            </label>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 <script>
                                     $(function () {
-                                        $('#colorPicker{{ shape_id }}').colorpicker({"color": "{{ color }}",
-                                                                                    useAlpha: false});
+                                        $('#colorPicker{{ shape_id }}').colorpicker({"color": "{{ shape_metadata.color }}",
+                                                                                    useAlpha: true});
                                         {% if shape_id != 'inactive_modflow_cells' %}
                                         deactivateShapeEditMode(jQuery, '{{ shape_id }}');
                                         {% endif %}
@@ -341,9 +350,8 @@
                                             </script>
                                         </select>
                                         <input id="manualValue{{ shape_id }}" value="0" type="number"
-                                               class="form-control input-lg" hidden disabled>
+                                               class="form-control input-lg" hidden disabled >
                                     </span>
-
                                     <button id="removeShapeButton{{ shape_id }}" type="button"
                                             class="btn btn-danger right"
                                             onClick="deleteShape('{{ metadata.project_id }}', '{{ shape_id }}')">Remove</button>
@@ -366,9 +374,14 @@
                             {% endfor %}
                             <li class="list-group-item" id="newShape">
                                 <div class="button-spacing">
-                                    <button id="genRchShapes" type="button" class="btn btn-primary right"
+                                    <button id="genRchShapes" type="button" class="btn btn-primary left"
                                             onclick="requestRechargeShapes('{{ metadata.project_id }}')">
                                         Generate RCH shapes
+                                    </button>
+
+                                    <button id="genSsmShapes" type="button" class="btn btn-warning right"
+                                            onclick="requestSoluteShapes('{{ metadata.project_id }}')">
+                                        Generate SSM shapes (MT3DMS)
                                     </button>
                                     <button id="uploadZbShapes" type="button" class="btn btn-info right"
                                             onclick="openZbShapesUploadDialog()">
@@ -418,9 +431,11 @@
                         <select id="simulationMode" class="custom-select container my-6 small-select"
                                 onchange="updateSimulationMode('{{ metadata.project_id }}')">
                             <option {% if metadata.simulation_mode == 'SIMPLE_COUPLING' %} selected {% endif %}
-                                value="SIMPLE_COUPLING">Simple coupling (no feedback loop)</option>
+                                value="SIMPLE_COUPLING">Simple coupling (HYDRUS-1D -> MODFLOW-2005)</option>
                             <option {% if metadata.simulation_mode == 'WITH_FEEDBACK' %} selected {% endif %}
                                 value="WITH_FEEDBACK">Feedback loop</option>
+                            <option {% if metadata.simulation_mode == 'SIMPLE_COUPLING_MT3DMS' %} selected {% endif %}
+                                value="SIMPLE_COUPLING_MT3DMS">Simple coupling (HYDRUS-1D -> MODFLOW-2005 -> MT3DMS)</option>
                         </select>
                     </div>
                     <div class="row justify-content-center">

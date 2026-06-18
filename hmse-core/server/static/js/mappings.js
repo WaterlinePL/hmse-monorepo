@@ -93,7 +93,7 @@ function fillMappings() {
 
 
 const MappingsConsts = {
-    "MANUAL_RECHARGE_VALUE": "[Manual recharge value]",
-    "NO_RECHARGE_VALUE": "[Recharge from Modflow]",
+    "MANUAL_RECHARGE_VALUE": "[Manual value]",
+    "NO_RECHARGE_VALUE": "[Original value]",
     "NO_WEATHER_FILE": "[No weather file]"
 }

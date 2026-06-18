@@ -13,6 +13,7 @@ from hmse_utils.processing.modflow import modflow_utils
 from simulations.projects.project_exceptions import ProjectInUse
 from simulations.projects.project_metadata import ProjectMetadata
 from server import endpoints, cookie_utils, path_checker, template, naming_utils
+from simulations.projects.shape_metadata import ShapeMode
 from simulations.projects.simulation_core_mode import SimulationCoreMode
 
 projects = Blueprint('projects', __name__)
@@ -237,7 +238,9 @@ def manual_shapes(project_id: str):
         shape_id = request.json['shapeId']
         new_shape_id = request.json.get('newShapeId') or shape_id
         color = request.json.get('color')
-        project_service.save_or_update_shape(project_id, shape_id, color, new_shape_id)
+        is_solute = request.json.get('isSolute')
+        shape_mode = ShapeMode.SOLUTE if is_solute else ShapeMode.RECHARGE
+        project_service.save_or_update_shape(project_id, shape_id, color, new_shape_id, shape_mode)
         return flask.Response(status=HTTPStatus.OK)
     elif request.method == 'GET':
         return project_service.get_all_shapes(project_id)
@@ -254,6 +257,14 @@ def rch_shapes(project_id: str):
     if check_previous_steps:
         return check_previous_steps
     return project_service.add_rch_shapes(project_id)
+
+@projects.route(endpoints.SSM_SHAPES, methods=['PUT'])
+def ssm_shapes(project_id: str):
+    cookie = request.cookies.get(cookie_utils.COOKIE_NAME)
+    check_previous_steps = path_checker.path_check_for_modflow_model(cookie, project_id)
+    if check_previous_steps:
+        return check_previous_steps
+    return project_service.add_ssm_shapes(project_id)
 
 
 @projects.route(endpoints.ZB_SHAPES, methods=['PUT'])

@@ -6,13 +6,16 @@ function editCompleteSuccessfully(projectId, newShapeId) {
 
 async function editShape(projectId, shapeId, newShapeId, color) {
     const url = getEndpointForProjectId(Config.editShapes, projectId);
+    const soluteCheckbox = document.getElementById(`shapeModeSwitch${shapeId}`);
+
     await fetch(url, {
         method: "PATCH",
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             shapeId: oldShapeId,
             newShapeId: newShapeId,
-            color: color
+            color: color,
+            isSolute: soluteCheckbox.checked,
         })
     }).then(response => {
         if (response.status === 200) {
@@ -180,6 +183,9 @@ function getShapeColorPickerName(shapeId) {
     return `colorPicker${shapeId}`;
 }
 
+function getShapeModeSwitchName(shapeId) {
+    return `shapeModeSwitch${shapeId}`;
+}
 
 function getListEntryName(shapeId) {
     return `shape${shapeId}`;
@@ -259,8 +265,7 @@ async function deleteShape(projectId, shapeId) {
     });
 }
 
-// TODO: probably not needed
-function addNewListEntry($, projectId, edit = true, shapeColor = "blue", shapeId = null) {
+function addNewListEntry($, projectId, edit, shapeId, shapeMetadata) {
     if (!shapeId) {
         const enterShapeName = "EnterShapeName";
         shapeId = enterShapeName;
@@ -300,6 +305,26 @@ function addNewListEntry($, projectId, edit = true, shapeColor = "blue", shapeId
     input.setAttribute("onchange", `changeShapeColor('${shapeId}')`);
     colorPickerInputSpan.appendChild(italic);
     colorPickerInputSpan.appendChild(input);
+
+    // Shape mode button
+    const shapeModeSwitchDiv = createElement("div", ["right"]);
+    shapeModeSwitchDiv.style = "margin-right: 30px"
+    outerColorDiv.appendChild(shapeModeSwitchDiv)
+
+    const shapeModeSwitchLabel = createElement("label", ["switch-shape-mode"]);
+    shapeModeSwitchDiv.appendChild(shapeModeSwitchLabel);
+
+    const shapeModeSwitchInput = createElement("input", [], getShapeModeSwitchName(shapeId));
+    shapeModeSwitchInput.type = "checkbox";
+    if (shapeMetadata.shape_mode === 'SOLUTE') {
+        shapeModeSwitchInput.checked = true;
+    }
+    shapeModeSwitchInput.onclick = () => onShapeModeChange(projectId, shapeId, shapeModeSwitchInput);
+    shapeModeSwitchLabel.appendChild(shapeModeSwitchInput);
+
+    const shapeModeSwitchSpan = createElement("span", ["slider-shape-mode", "round-shape-mode"]);
+    shapeModeSwitchLabel.appendChild(shapeModeSwitchSpan);
+
 
     // Right content
     const hydrusSelectSpan = createElement("span", ["slice-column", "left"]);
@@ -349,13 +374,14 @@ function addNewListEntry($, projectId, edit = true, shapeColor = "blue", shapeId
     const newShapeListEntry = document.getElementById("newShape");
     shapeList.insertBefore(listEntry, newShapeListEntry);
 
-    $(`#${getShapeColorPickerName(shapeId)}`).colorpicker({"color": shapeColor,
-                                                            useAlpha: false});
+    $(`#${getShapeColorPickerName(shapeId)}`).colorpicker({"color": shapeMetadata.color,
+                                                            useAlpha: true});
     deactivateShapeEditMode(jQuery, shapeId);
     if (edit) {
         editButton.hidden = true;
         activateShapeEditMode(jQuery, shapeId);
     }
+
 }
 
 function removeTemporaryShape(shapeId) {
@@ -393,4 +419,35 @@ function setSelectOptions(shapeId) {
 function checkForManualOption(shapeId) {
     const select = document.getElementById(getHydrusSelectId(shapeId));
     document.getElementById(getManualInputId(shapeId)).hidden = select.value !== MappingsConsts.MANUAL_RECHARGE_VALUE;
+}
+
+function changeVisibilityShapeRechargeOptions(shapeId, hidden) {
+    const rechargeSelectBox = document.getElementById(getHydrusSelectId(shapeId));
+    const manualRechargeInputBox = document.getElementById(getManualInputId(shapeId));
+    rechargeSelectBox.hidden = hidden;
+    manualRechargeInputBox.hidden = hidden || rechargeSelectBox.disabled || rechargeSelectBox.value !== MappingsConsts.MANUAL_RECHARGE_VALUE;
+}
+
+
+async function onShapeModeChange(projectId, shapeId, checkbox) {
+    const url = getEndpointForProjectId(Config.editShapes, projectId);
+    const color = getNewColorForShape(shapeId);
+    // changeVisibilityShapeRechargeOptions(shapeId, checkbox.checked);
+
+    await fetch(url, {
+        method: "PATCH",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            shapeId: shapeId,
+            newShapeId: shapeId,
+            color: color,
+            isSolute: checkbox.checked,
+        })
+    }).then(response => {
+        if (response.status !== 200) {
+            response.json().then(data => {
+                showErrorToast(jQuery, `Error: ${data.description}`);
+            });
+        }
+    });
 }

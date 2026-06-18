@@ -23,9 +23,12 @@ class SimulationStageName(StrEnum):
     HYDRUS_SIMULATION = auto()
     HYDRUS_SIMULATION_WARMUP = auto()
     HYDRUS_TO_MODFLOW_DATA_PASSING = auto()
+    HYDRUS_TO_MT3DMS_DATA_PASSING = auto()
     CORE_SIMULATION = auto()
     OUTPUT_EXTRACTION = auto()
     CLEANUP = auto()
+
+    MT3DMS_SIMULATION = auto()
 
     INITIALIZE_NEW_ITERATION_FILES = auto()
     SAVE_REFERENCE_HYDRUS_MODELS = auto()
@@ -59,8 +62,10 @@ SimulationStageName._STAGE_NAME_MAPPING = {
     SimulationStageName.INITIALIZATION: "Simulation initialization",
     SimulationStageName.WEATHER_DATA_TRANSFER: "Applying weather data to Hydrus models",
     SimulationStageName.HYDRUS_SIMULATION: "Hydrus simulations",
+    SimulationStageName.MT3DMS_SIMULATION: "MT3DMS simulation",
     SimulationStageName.HYDRUS_SIMULATION_WARMUP: "Hydrus simulations warmup",
     SimulationStageName.HYDRUS_TO_MODFLOW_DATA_PASSING: "Passing data from Hydrus to Modflow",
+    SimulationStageName.HYDRUS_TO_MT3DMS_DATA_PASSING: "Passing data from Hydrus to MT3DMS",
     SimulationStageName.CORE_SIMULATION: "Modflow simulation",
     SimulationStageName.OUTPUT_EXTRACTION: "Exporting output",
     SimulationStageName.CLEANUP: "Cleaning up after simulation",

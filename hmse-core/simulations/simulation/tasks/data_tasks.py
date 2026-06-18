@@ -23,6 +23,14 @@ class DataTasks:
         )
 
     @staticmethod
+    @hmse_task(stage_name=SimulationStageName.HYDRUS_TO_MT3DMS_DATA_PASSING)
+    def hydrus_to_mt3dms(project_metadata: ProjectMetadata, **kwargs) -> None:
+        deployment_config.get_deployment_function(SimulationStageName.HYDRUS_TO_MT3DMS_DATA_PASSING)(
+            project_metadata,
+            **kwargs
+        )
+
+    @staticmethod
     @hmse_task(stage_name=SimulationStageName.MODFLOW_TO_HYDRUS_DATA_PASSING)
     def modflow_to_hydrus(project_metadata: ProjectMetadata, **kwargs) -> None:
         deployment_config.get_deployment_function(SimulationStageName.MODFLOW_TO_HYDRUS_DATA_PASSING)(

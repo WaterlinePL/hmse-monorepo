@@ -43,6 +43,21 @@ def transfer_data_from_hydrus_to_modflow(project_id: str, shapes_to_hydrus: Dict
     )
 
 
+def transfer_data_from_hydrus_to_mt3dms(project_id: str, shapes_to_sol_hydrus: Dict[str, str], modflow_metadata: ModflowMetadata,
+                                        spin_up: int):
+    logger.debug(f"Transferring solute info from hydrus profiles to MT3DMS in project: {project_id}")
+    hydrus_to_sol_shapes = {
+        sol_hydrus_id: [shape_id for shape_id, hydrus_id in shapes_to_sol_hydrus.items() if hydrus_id == sol_hydrus_id]
+        for sol_hydrus_id in shapes_to_sol_hydrus.values()
+    }
+    data_passing_utils.solute_recharge_from_hydrus_to_mt3dms(
+        project_id=project_id,
+        modflow_metadata=modflow_metadata,
+        spin_up=spin_up,
+        model_to_solute_shapes_mapping=hydrus_to_sol_shapes,
+    )
+
+
 def transfer_data_from_modflow_to_hydrus(project_id: str,
                                          shapes_to_hydrus: Dict[str, Union[str, float]],
                                          modflow_metadata: ModflowMetadata,
