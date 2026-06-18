@@ -3,7 +3,7 @@ entries:
   hmse:
   - apiVersion: v2
     appVersion: 1.2.0
-    created: "2026-05-17T13:19:00.008597844Z"
+    created: "2026-06-18T22:03:44.602862196Z"
     dependencies:
     - name: airflow
       repository: https://airflow-helm.github.io/charts
@@ -12,7 +12,7 @@ entries:
       repository: file://charts/hmseWebserver
       version: 1.2.0
     description: Umbrella chart for running a HMSE workflow
-    digest: ce5c8f032a1a7feb2f6c3ef40e46b43460b7745f69ddf7e5884cb874ecc7fd5a
+    digest: b6b326f0bea07bdd73dadce66c523aa9d7d7ef189e337355586038beb6e666c4
     name: hmse
     type: application
     urls:
@@ -20,7 +20,7 @@ entries:
     version: 1.2.0
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2026-05-17T13:18:59.994822743Z"
+    created: "2026-06-18T22:03:44.595089019Z"
     dependencies:
     - name: airflow
       repository: https://airflow-helm.github.io/charts
@@ -37,7 +37,7 @@ entries:
     version: 1.0.0
   - apiVersion: v2
     appVersion: 0.0.4
-    created: "2026-05-17T13:18:59.98673079Z"
+    created: "2026-06-18T22:03:44.587224805Z"
     dependencies:
     - name: airflow
       repository: https://airflow-helm.github.io/charts
@@ -52,4 +52,4 @@ entries:
     urls:
     - hmse-0.1.0.tgz
     version: 0.1.0
-generated: "2026-05-17T13:18:59.978185387Z"
+generated: "2026-06-18T22:03:44.57881087Z"
