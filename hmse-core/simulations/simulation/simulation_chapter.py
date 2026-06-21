@@ -72,7 +72,7 @@ __SIMPLE_COUPLING_TASKS = [
     SimulationTasks.hydrus_simulation,
     DataTasks.hydrus_to_modflow,
     SimulationTasks.modflow_simulation,
-    ConfigurationTasks.output_extraction_to_json,
+    # ConfigurationTasks.output_extraction_to_json,
     ConfigurationTasks.cleanup
 ]
 
