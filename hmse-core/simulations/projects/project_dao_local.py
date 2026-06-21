@@ -18,6 +18,8 @@ from simulations.projects.typing_help import ProjectID, WeatherID, ShapeID
 
 logger = logging.getLogger(__name__)
 
+_LAST_PROJECT_METADATA_CACHE: ProjectMetadata = None
+
 
 @desktop(identification=project_dao.IDENTIFICATION)
 @docker(identification=project_dao.IDENTIFICATION)
@@ -29,8 +31,12 @@ class ProjectDaoLocal:
 
     def read_metadata(self, project_id: ProjectID) -> ProjectMetadata:
         logger.debug(f"Reading metadata for project: {project_id}")
-        with open(local_paths.get_project_metadata_path(project_id), 'r') as handle:
-            return ProjectMetadata(**json.load(handle))
+        global _LAST_PROJECT_METADATA_CACHE
+        if not _LAST_PROJECT_METADATA_CACHE or _LAST_PROJECT_METADATA_CACHE.project_id != project_id:
+            with open(local_paths.get_project_metadata_path(project_id), 'r') as handle:
+                _LAST_PROJECT_METADATA_CACHE = ProjectMetadata(**json.load(handle))
+        return _LAST_PROJECT_METADATA_CACHE
+
 
     def read_all_metadata(self) -> List[ProjectMetadata]:
         logger.debug("Reading metadata of all projects")
